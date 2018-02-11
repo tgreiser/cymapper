@@ -1,19 +1,61 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"image"
 	"image/color"
+	"log"
+	"time"
 
+	"github.com/tarm/serial"
 	"gocv.io/x/gocv"
 )
 
+var leds = flag.Int("leds", 460, "Number of LEDs per strip (1-10000)")
+var pins = flag.Int("pins", 8, "Number of pins which have LEDs connected")
+var radius = flag.Int("radius", 5, "Radius of the gaussian blur used for noise reduction")
+var width = flag.Int("width", 1280, "Width of the video stream you will be mapping")
+var height = flag.Int("height", 720, "Height of the video stream you will be mapping")
+var border = flag.Float64("border", 4.0, "Unused space to leave around the outer pixels")
+var deviceID = flag.Int("device-id", 0, "Device ID of your webcam")
+var comPort = flag.String("com", "COM8", "COM port for teensy")
+var delayMs = flag.Int("delay-ms", 1000, "Number of milliseconds to pause on each LED")
+var startPin = flag.Int("start-pin", 1, "Skip to a certain pin")
+
+// Illuminate each LED one at a time, in sequence.
+var counter = 0
+var max = 0
+
+// Return a buffer of bytes, leds * pins * 3
+var bufLen = 0
+
 func main() {
-	radius := 5
-	deviceID := 0
+	flag.Parse()
+
+	// ensure radius is above 0 and an odd number
+	if *radius < 1 {
+		*radius = 1
+	}
+	if *radius%2 == 0 {
+		*radius = *radius + 1
+	}
+
+	max = *leds * *pins
+	// Return a buffer of bytes, leds * pins * 3
+	bufLen = max * 3
+	counter = (*startPin - 1) * *leds * 3
+
+	// Serial configuration for teensy
+	c := &serial.Config{Name: *comPort, Baud: 256000}
+	s, err := serial.OpenPort(c)
+	if err != nil {
+		log.Fatalf("When connecting to port: %v: %v", *comPort, err)
+	}
+	defer s.Close()
 
 	// open webcam
-	webcam, err := gocv.VideoCaptureDevice(int(deviceID))
+	webcam, err := gocv.VideoCaptureDevice(int(*deviceID))
 	if err != nil {
 		fmt.Printf("error opening video capture device: %v\n", deviceID)
 		return
@@ -24,7 +66,16 @@ func main() {
 	window := gocv.NewWindow("CyMapper")
 	defer window.Close()
 
-	// prepare image matrix
+	// start a routine to activate the LEDs
+	ticker := time.NewTicker(time.Millisecond * time.Duration(*delayMs))
+	go func() {
+		for _ = range ticker.C {
+			ledSequence(s)
+			//fmt.Println("Tick at ", t, counter)
+		}
+	}()
+
+	// prepare image matricies
 	img := gocv.NewMat()
 	defer img.Close()
 
@@ -34,10 +85,11 @@ func main() {
 	// color for the rect when light detected
 	blue := color.RGBA{0, 0, 255, 0}
 
-	fmt.Printf("start reading camera device: %v\n", deviceID)
+	fmt.Printf("start reading camera device: %v\n", *deviceID)
 	for {
+
 		if ok := webcam.Read(img); !ok {
-			fmt.Printf("cannot read device %d\n", deviceID)
+			fmt.Printf("cannot read device %d\n", *deviceID)
 			return
 		}
 		if img.Empty() {
@@ -45,16 +97,41 @@ func main() {
 		}
 
 		gocv.CvtColor(img, gray, gocv.ColorRGBToGray)
-		gocv.GaussianBlur(gray, gray, image.Point{X: radius, Y: radius}, 0, 0, gocv.BorderDefault)
+		gocv.GaussianBlur(gray, gray, image.Point{X: *radius, Y: *radius}, 0, 0, gocv.BorderDefault)
 
 		// detect brightest point
 		_, _, _, maxLoc := gocv.MinMaxLoc(gray)
 
 		// draw a rectangle around the bright spot
-		gocv.Rectangle(img, image.Rect(maxLoc.X-20, maxLoc.Y-20, maxLoc.X+20, maxLoc.Y+20), blue, 3)
+		gocv.Rectangle(gray, image.Rect(maxLoc.X-6, maxLoc.Y-6, maxLoc.X+6, maxLoc.Y+6), blue, 3)
 
 		// show the image in the window, and wait 1 millisecond
-		window.IMShow(img)
-		window.WaitKey(1)
+		window.IMShow(gray)
+		window.WaitKey(*delayMs)
+	}
+}
+
+func ledSequence(s *serial.Port) {
+	fmt.Printf("Running ledSequence with %d pins, %d LEDs, %d total, %c count\n", *pins, *leds, max, counter)
+	buf := make([]byte, bufLen, bufLen)
+
+	for iX := 0; iX < bufLen; iX++ {
+		if iX >= counter && iX < counter+3 {
+			buf[iX] = 255
+		} else {
+			buf[iX] = 0
+		}
+	}
+	counter = counter + 3
+	if counter >= bufLen {
+		counter = 0
+		fmt.Printf("Finished sequence, restarting %d\n", bufLen)
+	}
+
+	// send to the teensy via serial
+	//log.Printf("sending %v bytes\n", len(buf))
+	_, err := s.Write(buf)
+	if err != nil {
+		log.Printf("Serial write error: %v\n", err)
 	}
 }

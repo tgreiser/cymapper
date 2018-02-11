@@ -9,6 +9,8 @@ Sequentially activate addressable LEDs which are attached to a teensy (via USB/s
 
 Still being implemented:
 
+- leds - per strip
+- strips - number of pins connected
 - radius - radius of the gaussian blur used for noise reduction
 - width - of your video stream
 - height - of your video stream
