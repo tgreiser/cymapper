@@ -14,7 +14,7 @@ import (
 
 var leds = flag.Int("leds", 460, "Number of LEDs per strip (1-10000)")
 var pins = flag.Int("pins", 8, "Number of pins which have LEDs connected")
-var radius = flag.Int("radius", 5, "Radius of the gaussian blur used for noise reduction")
+var radius = flag.Int("radius", 21, "Radius of the gaussian blur used for noise reduction")
 var width = flag.Int("width", 1280, "Width of the video stream you will be mapping")
 var height = flag.Int("height", 720, "Height of the video stream you will be mapping")
 var border = flag.Float64("border", 4.0, "Unused space to leave around the outer pixels")
@@ -30,7 +30,10 @@ var max = 0
 // Return a buffer of bytes, leds * pins * 3
 var bufLen = 0
 
-func main() {
+// color for the rect when light detected
+var blue = color.RGBA{0, 0, 255, 0}
+
+func init() {
 	flag.Parse()
 
 	// ensure radius is above 0 and an odd number
@@ -45,7 +48,9 @@ func main() {
 	// Return a buffer of bytes, leds * pins * 3
 	bufLen = max * 3
 	counter = (*startPin - 1) * *leds * 3
+}
 
+func main() {
 	// Serial configuration for teensy
 	c := &serial.Config{Name: *comPort, Baud: 256000}
 	s, err := serial.OpenPort(c)
@@ -66,15 +71,6 @@ func main() {
 	window := gocv.NewWindow("CyMapper")
 	defer window.Close()
 
-	// start a routine to activate the LEDs
-	ticker := time.NewTicker(time.Millisecond * time.Duration(*delayMs))
-	go func() {
-		for _ = range ticker.C {
-			ledSequence(s)
-			//fmt.Println("Tick at ", t, counter)
-		}
-	}()
-
 	// prepare image matricies
 	img := gocv.NewMat()
 	defer img.Close()
@@ -82,36 +78,61 @@ func main() {
 	gray := gocv.NewMat()
 	defer gray.Close()
 
-	// color for the rect when light detected
-	blue := color.RGBA{0, 0, 255, 0}
+	c1 := make(chan string)
+	tick(s, c1)
 
 	fmt.Printf("start reading camera device: %v\n", *deviceID)
 	for {
-
-		if ok := webcam.Read(img); !ok {
-			fmt.Printf("cannot read device %d\n", *deviceID)
-			return
+		select {
+		case msg := <-c1:
+			if msg == "tick" {
+				if ok := webcam.Read(img); !ok {
+					fmt.Printf("cannot read device %d\n", *deviceID)
+					return
+				}
+				processFrame(window, img, gray)
+			} else if msg == "stop" {
+				break
+			}
 		}
-		if img.Empty() {
-			continue
-		}
-
-		gocv.CvtColor(img, gray, gocv.ColorRGBToGray)
-		gocv.GaussianBlur(gray, gray, image.Point{X: *radius, Y: *radius}, 0, 0, gocv.BorderDefault)
-
-		// detect brightest point
-		_, _, _, maxLoc := gocv.MinMaxLoc(gray)
-
-		// draw a rectangle around the bright spot
-		gocv.Rectangle(gray, image.Rect(maxLoc.X-6, maxLoc.Y-6, maxLoc.X+6, maxLoc.Y+6), blue, 3)
-
-		// show the image in the window, and wait 1 millisecond
-		window.IMShow(gray)
-		window.WaitKey(*delayMs)
 	}
 }
 
-func ledSequence(s *serial.Port) {
+func tick(s *serial.Port, c1 chan string) {
+	// start a routine to activate the LEDs
+	ticker := time.NewTicker(time.Millisecond * time.Duration(*delayMs))
+	go func() {
+		for _ = range ticker.C {
+			ledSequence(s, c1)
+			fmt.Println("Ping")
+			time.AfterFunc(time.Duration(*delayMs/2)*time.Millisecond, func() {
+				c1 <- "tick"
+				fmt.Println("click")
+			})
+		}
+	}()
+}
+
+func processFrame(window *gocv.Window, img, gray gocv.Mat) {
+	if img.Empty() {
+		return
+	}
+
+	gocv.CvtColor(img, gray, gocv.ColorRGBToGray)
+	gocv.GaussianBlur(gray, gray, image.Point{X: *radius, Y: *radius}, 0, 0, gocv.BorderDefault)
+
+	// detect brightest point
+	_, _, _, maxLoc := gocv.MinMaxLoc(gray)
+
+	// draw a rectangle around the bright spot
+	gocv.Rectangle(gray, image.Rect(maxLoc.X-6, maxLoc.Y-6, maxLoc.X+6, maxLoc.Y+6), blue, 3)
+
+	// show the image in the window, and wait 1 millisecond
+	window.IMShow(gray)
+	window.WaitKey(*delayMs)
+}
+
+func ledSequence(s *serial.Port, c chan string) {
 	fmt.Printf("Running ledSequence with %d pins, %d LEDs, %d total, %c count\n", *pins, *leds, max, counter)
 	buf := make([]byte, bufLen, bufLen)
 
@@ -125,7 +146,8 @@ func ledSequence(s *serial.Port) {
 	counter = counter + 3
 	if counter >= bufLen {
 		counter = 0
-		fmt.Printf("Finished sequence, restarting %d\n", bufLen)
+		fmt.Printf("Finished sequence, ending %d\n", bufLen)
+		c <- "stop"
 	}
 
 	// send to the teensy via serial
