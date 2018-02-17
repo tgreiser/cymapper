@@ -1,22 +1,26 @@
 package main
 
 import (
+	"encoding/csv"
 	"flag"
 	"fmt"
 	"image"
 	"image/color"
 	"log"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/tarm/serial"
 	"gocv.io/x/gocv"
 )
 
+var tsvPath = flag.String("file", "output.tsv", "Filename for the tsv output")
 var leds = flag.Int("leds", 460, "Number of LEDs per strip (1-10000)")
 var pins = flag.Int("pins", 8, "Number of pins which have LEDs connected")
 var radius = flag.Int("radius", 21, "Radius of the gaussian blur used for noise reduction")
-var width = flag.Int("width", 1280, "Width of the video stream you will be mapping")
-var height = flag.Int("height", 720, "Height of the video stream you will be mapping")
+var vwidth = flag.Int("vwidth", 1280, "Width of the video stream you will be mapping")
+var vheight = flag.Int("vheight", 720, "Height of the video stream you will be mapping")
 var border = flag.Float64("border", 4.0, "Unused space to leave around the outer pixels")
 var deviceID = flag.Int("device-id", 0, "Device ID of your webcam")
 var comPort = flag.String("com", "COM8", "COM port for teensy")
@@ -32,6 +36,11 @@ var bufLen = 0
 
 // color for the rect when light detected
 var blue = color.RGBA{0, 0, 255, 0}
+
+var ticker = time.NewTicker(time.Millisecond * time.Duration(*delayMs))
+var stop = false
+var width = 0
+var height = 0
 
 func init() {
 	flag.Parse()
@@ -78,6 +87,24 @@ func main() {
 	gray := gocv.NewMat()
 	defer gray.Close()
 
+	// read camera dimensions
+	if ok := webcam.Read(img); !ok {
+		fmt.Printf("cannot read device %d\n", *deviceID)
+		return
+	}
+	fmt.Printf("%d x %d\n", img.Cols(), img.Rows())
+	width = img.Cols()
+	height = img.Rows()
+
+	file, err := os.Create(*tsvPath)
+	if err != nil {
+		log.Fatalf("Unable to create %v: %v\n", *tsvPath, err)
+	}
+	defer file.Close()
+	w := csv.NewWriter(file)
+	defer w.Flush()
+	w.Comma = '\t'
+
 	c1 := make(chan string)
 	tick(s, c1)
 
@@ -85,22 +112,31 @@ func main() {
 	for {
 		select {
 		case msg := <-c1:
-			if msg == "tick" {
-				if ok := webcam.Read(img); !ok {
-					fmt.Printf("cannot read device %d\n", *deviceID)
-					return
-				}
-				processFrame(window, img, gray)
-			} else if msg == "stop" {
-				break
+			fmt.Printf("msg: %v\n", msg)
+			if ok := webcam.Read(img); !ok {
+				fmt.Printf("cannot read device %d\n", *deviceID)
+				return
+			}
+			pt := processFrame(window, img, gray)
+			err := w.Write([]string{strconv.Itoa(pt.X), strconv.Itoa(pt.Y)})
+			if err != nil {
+				fmt.Printf("Can not write TSV data: %v\n", err)
+			}
+
+			if msg == "stop" {
+				ticker.Stop()
+				stop = true
 			}
 		}
+		if stop == true {
+			break
+		}
 	}
+	fmt.Println("Done")
 }
 
 func tick(s *serial.Port, c1 chan string) {
 	// start a routine to activate the LEDs
-	ticker := time.NewTicker(time.Millisecond * time.Duration(*delayMs))
 	go func() {
 		for _ = range ticker.C {
 			ledSequence(s, c1)
@@ -113,9 +149,9 @@ func tick(s *serial.Port, c1 chan string) {
 	}()
 }
 
-func processFrame(window *gocv.Window, img, gray gocv.Mat) {
+func processFrame(window *gocv.Window, img, gray gocv.Mat) *image.Point {
 	if img.Empty() {
-		return
+		return nil
 	}
 
 	gocv.CvtColor(img, gray, gocv.ColorRGBToGray)
@@ -130,10 +166,12 @@ func processFrame(window *gocv.Window, img, gray gocv.Mat) {
 	// show the image in the window, and wait 1 millisecond
 	window.IMShow(gray)
 	window.WaitKey(*delayMs)
+
+	return &maxLoc
 }
 
 func ledSequence(s *serial.Port, c chan string) {
-	fmt.Printf("Running ledSequence with %d pins, %d LEDs, %d total, %c count\n", *pins, *leds, max, counter)
+	fmt.Printf("Running ledSequence with %d pins, %d LEDs, %d total, %d count\n", *pins, *leds, max, counter)
 	buf := make([]byte, bufLen, bufLen)
 
 	for iX := 0; iX < bufLen; iX++ {
