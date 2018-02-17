@@ -140,10 +140,8 @@ func tick(s *serial.Port, c1 chan string) {
 	go func() {
 		for _ = range ticker.C {
 			ledSequence(s, c1)
-			fmt.Println("Ping")
 			time.AfterFunc(time.Duration(*delayMs/2)*time.Millisecond, func() {
 				c1 <- "tick"
-				fmt.Println("click")
 			})
 		}
 	}()
@@ -167,6 +165,7 @@ func processFrame(window *gocv.Window, img, gray gocv.Mat) *image.Point {
 	window.IMShow(gray)
 	window.WaitKey(*delayMs)
 
+	fmt.Printf("%d x %d\n", maxLoc.X, maxLoc.Y)
 	return &maxLoc
 }
 
