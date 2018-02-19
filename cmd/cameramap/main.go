@@ -8,6 +8,7 @@ import (
 	"image/color"
 	"log"
 	"os"
+	"os/signal"
 	"strconv"
 	"time"
 
@@ -19,9 +20,7 @@ var tsvPath = flag.String("file", "output.tsv", "Filename for the tsv output")
 var leds = flag.Int("leds", 460, "Number of LEDs per strip (1-10000)")
 var pins = flag.Int("pins", 8, "Number of pins which have LEDs connected")
 var radius = flag.Int("radius", 21, "Radius of the gaussian blur used for noise reduction")
-var vwidth = flag.Int("vwidth", 1280, "Width of the video stream you will be mapping")
-var vheight = flag.Int("vheight", 720, "Height of the video stream you will be mapping")
-var border = flag.Float64("border", 4.0, "Unused space to leave around the outer pixels")
+
 var deviceID = flag.Int("device-id", 0, "Device ID of your webcam")
 var comPort = flag.String("com", "COM8", "COM port for teensy")
 var delayMs = flag.Int("delay-ms", 1000, "Number of milliseconds to pause on each LED")
@@ -105,6 +104,11 @@ func main() {
 	defer w.Flush()
 	w.Comma = '\t'
 
+	// channel to receive os signal
+	cs := make(chan os.Signal, 1)
+	signal.Notify(cs, os.Interrupt)
+
+	// channel to receive camera event
 	c1 := make(chan string)
 	tick(s, c1)
 
@@ -127,6 +131,9 @@ func main() {
 				ticker.Stop()
 				stop = true
 			}
+		case _ = <-cs:
+			ticker.Stop()
+			stop = true
 		}
 		if stop == true {
 			break
