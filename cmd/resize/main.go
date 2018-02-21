@@ -14,6 +14,8 @@ var tsvPath = flag.String("file", "remapped.tsv", "Filename for the tsv output")
 var vwidth = flag.Int("vwidth", 1280, "Width of the video stream you will be mapping")
 var vheight = flag.Int("vheight", 720, "Height of the video stream you will be mapping")
 var border = flag.Int("border", 4, "Unused space to leave around the outer pixels")
+var flipX = flag.Bool("flip-x", false, "Flip the image along the X axis")
+var flipY = flag.Bool("flip-y", true, "Flip the image along the Y axis")
 
 func init() {
 	flag.Parse()
@@ -53,7 +55,13 @@ func remapPointsAndWrite(pts [][]string, b1, b2, vsize image.Point, w *csv.Write
 	frame := image.Point{X: b2.X - b1.X, Y: b2.Y - b1.Y}
 	// after the scene is centered, these represent the basis vectors for the transformation
 	xmult := float64(vsize.X) / float64(frame.X)
+	if *flipX {
+		xmult = xmult * -1
+	}
 	ymult := float64(vsize.Y) / float64(frame.Y)
+	if *flipY {
+		ymult = ymult * -1
+	}
 	fmt.Printf("transformation: X %v Y %v\n", xmult, ymult)
 	for _, pt := range pts {
 		ptX, err := strconv.ParseFloat(pt[0], 64)
@@ -66,7 +74,13 @@ func remapPointsAndWrite(pts [][]string, b1, b2, vsize image.Point, w *csv.Write
 		}
 
 		lx := (ptX - float64(b1.X)) * xmult
+		if *flipX {
+			lx += float64(*vwidth)
+		}
 		ly := (ptY - float64(b1.Y)) * ymult
+		if *flipY {
+			ly += float64(*vheight)
+		}
 
 		w.Write([]string{
 			strconv.FormatFloat(lx, 'f', -1, 32),
