@@ -112,7 +112,7 @@ func main() {
 	c1 := make(chan string)
 	tick(s, c1)
 
-	fmt.Printf("start reading camera device: %v\n", *deviceID)
+	fmt.Printf("start reading camera device: %v with delay\n", *deviceID, *delayMs)
 	for {
 		select {
 		case msg := <-c1:

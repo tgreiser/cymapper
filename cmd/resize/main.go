@@ -28,14 +28,15 @@ func main() {
 	r := csv.NewReader(os.Stdin)
 	r.Comma = '\t'
 	pts, _ := r.ReadAll()
+	fmt.Printf("\ncymapper resize\n")
 
 	p1, p2 := findBounds(pts)
-	fmt.Printf("p1 %d x %d\n", p1.X, p1.Y)
-	fmt.Printf("p2 %d x %d\n", p2.X, p2.Y)
+	fmt.Printf("Area with pixels from %d x %d ", p1.X, p1.Y)
+	fmt.Printf("to %d x %d\n", p2.X, p2.Y)
 
 	b1, b2 := applyBorder(p1, p2, *border)
-	fmt.Printf("b1 %d x %d\n", b1.X, b1.Y)
-	fmt.Printf("b2 %d x %d\n", b2.X, b2.Y)
+	fmt.Printf("Border from %d x %d ", b1.X, b1.Y)
+	fmt.Printf("to %d x %d\n", b2.X, b2.Y)
 
 	vsize := image.Point{X: *vwidth, Y: *vheight}
 
@@ -48,7 +49,9 @@ func main() {
 	defer w.Flush()
 	w.Comma = '\t'
 
+	fmt.Printf("Resize %v x %v to %v x %v\n", b2.X-b1.X, b2.Y-b1.Y, *vwidth, *vheight)
 	remapPointsAndWrite(pts, b1, b2, vsize, w)
+	fmt.Printf("Writing %v\n", *tsvPath)
 }
 
 func remapPointsAndWrite(pts [][]string, b1, b2, vsize image.Point, w *csv.Writer) {
@@ -62,7 +65,7 @@ func remapPointsAndWrite(pts [][]string, b1, b2, vsize image.Point, w *csv.Write
 	if *flipY {
 		ymult = ymult * -1
 	}
-	fmt.Printf("transformation: X %v Y %v\n", xmult, ymult)
+	fmt.Printf("Transformation: X %v Y %v\n", xmult, ymult)
 	for _, pt := range pts {
 		ptX, err := strconv.ParseFloat(pt[0], 64)
 		if err != nil {
@@ -100,7 +103,7 @@ func applyBorder(p1, p2 image.Point, border int) (image.Point, image.Point) {
 func findBounds(pts [][]string) (image.Point, image.Point) {
 	var p1 = image.Point{X: 9999, Y: 9999}
 	var p2 = image.Point{}
-	fmt.Printf("%v\n", pts)
+
 	for _, pt := range pts {
 		ptX, err := strconv.Atoi(pt[0])
 		if err != nil {
