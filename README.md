@@ -17,7 +17,7 @@ Run to test and position your webcam.
   -device-id int
         Device ID of your webcam
 
-
+> env.cmd
 > go run cmd\camtest\main.go -device-id=0
 ```
 
@@ -44,7 +44,7 @@ cmd/cameramap
   
 ```
 > env.cmd
-> go run cmd\cameramap\main -pins=1 -leds=50 -com=COM9
+> go run cmd\cameramap\main.go -pins=1 -leds=50 -com=COM9
 # saves to output.tsv
 ```
 
@@ -55,13 +55,20 @@ cmd/cameramap
         Unused space to leave around the outer pixels (default 4)
   -file string
         Filename for the tsv output (default "remapped.tsv")
+  -flip-x
+        Flip the image along the X axis
+  -flip-y
+        Flip the image along the Y axis (default true)
   -vheight int
         Height of the video stream you will be mapping (default 720)
   -vwidth int
         Width of the video stream you will be mapping (default 1280)
-```
 
-```
-cat output.tsv | go run cmd/resize/main.go
-# will save to remapped.tsv
+# on windows
+> env.cmd
+> type output.tsv | go run cmd\resize\main.go -vwidth 640 -vheight 480
+
+# on linux/osx
+> env.sh
+> cat output.tsv | go run cmd/resize/main.go
 ```
