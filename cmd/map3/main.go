@@ -16,6 +16,11 @@ import (
 	"gocv.io/x/gocv"
 )
 
+/*
+This program is not currently working. The intention is to map 3 pixels at
+the same time. One red, blue and green.
+*/
+
 var tsvPath = flag.String("file", "output.tsv", "Filename for the tsv output")
 var leds = flag.Int("leds", 460, "Number of LEDs per strip (1-10000)")
 var pins = flag.Int("pins", 8, "Number of pins which have LEDs connected")
@@ -26,7 +31,7 @@ var comPort = flag.String("com", "COM8", "COM port for teensy")
 var delayMs = flag.Int("delay-ms", 1000, "Number of milliseconds to pause on each LED")
 var startPin = flag.Int("start-pin", 1, "Skip to a certain pin")
 
-// Illuminate each LED one at a time, in sequence.
+// Illuminate each LED three at a time, in sequence.
 var counter = 0
 var max = 0
 
@@ -34,7 +39,9 @@ var max = 0
 var bufLen = 0
 
 // color for the rect when light detected
-var blue = color.RGBA{0, 0, 255, 0}
+var cb = color.RGBA{0, 0, 255, 0}
+var cr = color.RGBA{255, 0, 0, 0}
+var cg = color.RGBA{0, 255, 0, 0}
 
 var ticker = time.NewTicker(time.Millisecond * time.Duration(*delayMs))
 var stop = false
@@ -83,8 +90,12 @@ func main() {
 	img := gocv.NewMat()
 	defer img.Close()
 
-	gray := gocv.NewMat()
-	defer gray.Close()
+	red := gocv.NewMat()
+	defer red.Close()
+	blue := gocv.NewMat()
+	defer blue.Close()
+	green := gocv.NewMat()
+	defer green.Close()
 
 	// read camera dimensions
 	if ok := webcam.Read(img); !ok {
@@ -110,9 +121,11 @@ func main() {
 
 	// channel to receive camera event
 	c1 := make(chan string)
-	tick(s, c1)
+	tick(s, *delayMs, c1)
 
-	fmt.Printf("start reading camera device: %v with delay\n", *deviceID, *delayMs)
+	fmt.Printf("start reading camera device: %v\n", *deviceID)
+	iX := 0
+	max := *pins * *leds
 	for {
 		select {
 		case msg := <-c1:
@@ -121,11 +134,21 @@ func main() {
 				fmt.Printf("cannot read device %d\n", *deviceID)
 				return
 			}
-			pt := processFrame(window, img, gray)
-			err := w.Write([]string{strconv.Itoa(pt.X), strconv.Itoa(pt.Y)})
-			if err != nil {
-				fmt.Printf("Can not write TSV data: %v\n", err)
+			r, g, b := processFrame(window, img, red, blue, green)
+			// stop writing after all the points requested
+			write := func(w *csv.Writer, pt *image.Point) {
+				if iX >= max {
+					return
+				}
+				err := w.Write([]string{strconv.Itoa(pt.X), strconv.Itoa(pt.Y)})
+				if err != nil {
+					fmt.Printf("Can not write TSV data: %v\n", err)
+				}
+				iX++
 			}
+			write(w, r)
+			write(w, g)
+			write(w, b)
 
 			if msg == "stop" {
 				ticker.Stop()
@@ -142,38 +165,80 @@ func main() {
 	fmt.Println("Done")
 }
 
-func tick(s *serial.Port, c1 chan string) {
+func tick(s *serial.Port, delay int, c1 chan string) {
 	// start a routine to activate the LEDs
 	go func() {
 		for _ = range ticker.C {
 			ledSequence(s, c1)
-			time.AfterFunc(time.Duration(*delayMs/2)*time.Millisecond, func() {
+			time.AfterFunc(time.Duration(delay/2)*time.Millisecond, func() {
 				c1 <- "tick"
 			})
 		}
 	}()
 }
 
-func processFrame(window *gocv.Window, img, gray gocv.Mat) *image.Point {
+func processFrame(window *gocv.Window, img, red, green, blue gocv.Mat) (*image.Point, *image.Point, *image.Point) {
 	if img.Empty() {
-		return nil
+		return nil, nil, nil
+	}
+	t := time.Now()
+
+	gocv.GaussianBlur(img, red, image.Point{X: *radius, Y: *radius}, 0, 0, gocv.BorderDefault)
+
+	// split into RGB
+	r := img.Rows()
+	c := img.Cols() * 3
+	red.CopyTo(blue)
+	red.CopyTo(green)
+	for iX := 0; iX < r; iX++ {
+		for iY := 0; iY < c; iY += 3 {
+			//fmt.Printf("%v %v\n", iX, iY)
+			rb := red.GetSCharAt(iX, iY+2)
+			red.SetSCharAt(iX, iY, rb)
+			if iY+1 < c {
+				red.SetSCharAt(iX, iY+1, rb)
+			}
+
+			bb := blue.GetSCharAt(iX, iY)
+			if iY+1 < c {
+				blue.SetSCharAt(iX, iY+1, bb)
+			}
+			if iY+2 < c {
+				blue.SetSCharAt(iX, iY+2, bb)
+			}
+
+			gb := green.GetSCharAt(iX, iY+1)
+			green.SetSCharAt(iX, iY+0, gb)
+			if iY+2 < c {
+				green.SetSCharAt(iX, iY+2, gb)
+			}
+		}
 	}
 
-	gocv.CvtColor(img, gray, gocv.ColorRGBToGray)
-	gocv.GaussianBlur(gray, gray, image.Point{X: *radius, Y: *radius}, 0, 0, gocv.BorderDefault)
+	gocv.CvtColor(red, red, gocv.ColorRGBToGray)
+	gocv.CvtColor(green, green, gocv.ColorRGBToGray)
+	gocv.CvtColor(blue, blue, gocv.ColorRGBToGray)
 
 	// detect brightest point
-	_, _, _, maxLoc := gocv.MinMaxLoc(gray)
+	_, _, _, rLoc := gocv.MinMaxLoc(red)
+	_, _, _, gLoc := gocv.MinMaxLoc(green)
+	_, _, _, bLoc := gocv.MinMaxLoc(blue)
 
 	// draw a rectangle around the bright spot
-	gocv.Rectangle(gray, image.Rect(maxLoc.X-6, maxLoc.Y-6, maxLoc.X+6, maxLoc.Y+6), blue, 3)
+	gocv.Rectangle(img, image.Rect(rLoc.X-6, rLoc.Y-6, rLoc.X+6, rLoc.Y+6), cr, 3)
+	gocv.Rectangle(img, image.Rect(gLoc.X-6, gLoc.Y-6, gLoc.X+6, gLoc.Y+6), cg, 3)
+	gocv.Rectangle(img, image.Rect(bLoc.X-6, bLoc.Y-6, bLoc.X+6, bLoc.Y+6), cb, 3)
 
 	// show the image in the window, and wait 1 millisecond
-	window.IMShow(gray)
-	window.WaitKey(*delayMs)
+	window.IMShow(img)
+	window.WaitKey(1)
+	//window.WaitKey(*delayMs)
 
-	fmt.Printf("%d x %d\n", maxLoc.X, maxLoc.Y)
-	return &maxLoc
+	fmt.Printf("R %d x %d\n", rLoc.X, rLoc.Y)
+	fmt.Printf("G %d x %d\n", gLoc.X, gLoc.Y)
+	fmt.Printf("B %d x %d\n", bLoc.X, bLoc.Y)
+	fmt.Printf("%v\n", time.Since(t))
+	return &rLoc, &gLoc, &bLoc
 }
 
 func ledSequence(s *serial.Port, c chan string) {
@@ -181,13 +246,24 @@ func ledSequence(s *serial.Port, c chan string) {
 	buf := make([]byte, bufLen, bufLen)
 
 	for iX := 0; iX < bufLen; iX++ {
-		if iX >= counter && iX < counter+3 {
-			buf[iX] = 255
-		} else {
+		if iX == counter {
 			buf[iX] = 0
+			buf[iX+1] = 45
+			buf[iX+2] = 0
+
+			if iX+5 < bufLen {
+				buf[iX+3] = 45
+				buf[iX+4] = 0
+				buf[iX+5] = 0
+			}
+			if iX+8 < bufLen {
+				buf[iX+6] = 0
+				buf[iX+7] = 0
+				buf[iX+8] = 45
+			}
 		}
 	}
-	counter = counter + 3
+	counter = counter + 9
 	if counter >= bufLen {
 		counter = 0
 		fmt.Printf("Finished sequence, ending %d\n", bufLen)
@@ -196,6 +272,7 @@ func ledSequence(s *serial.Port, c chan string) {
 
 	// send to the teensy via serial
 	//log.Printf("sending %v bytes\n", len(buf))
+	//log.Printf("%v\n", buf)
 	_, err := s.Write(buf)
 	if err != nil {
 		log.Printf("Serial write error: %v\n", err)
