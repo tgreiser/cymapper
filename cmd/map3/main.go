@@ -24,7 +24,7 @@ the same time. One red, blue and green.
 var tsvPath = flag.String("file", "output.tsv", "Filename for the tsv output")
 var leds = flag.Int("leds", 460, "Number of LEDs per strip (1-10000)")
 var pins = flag.Int("pins", 8, "Number of pins which have LEDs connected")
-var radius = flag.Int("radius", 21, "Radius of the gaussian blur used for noise reduction")
+var radius = flag.Int("radius", 7, "Radius of the gaussian blur used for noise reduction")
 
 var deviceID = flag.Int("device-id", 0, "Device ID of your webcam")
 var comPort = flag.String("com", "COM8", "COM port for teensy")
