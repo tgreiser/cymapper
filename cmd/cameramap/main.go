@@ -36,13 +36,14 @@ var bufLen = 0
 // color for the rect when light detected
 var blue = color.RGBA{0, 0, 255, 0}
 
-var ticker = time.NewTicker(time.Millisecond * time.Duration(*delayMs))
+var ticker *time.Ticker
 var stop = false
 var width = 0
 var height = 0
 
 func init() {
 	flag.Parse()
+	ticker = time.NewTicker(time.Millisecond * time.Duration(*delayMs))
 
 	// ensure radius is above 0 and an odd number
 	if *radius < 1 {
@@ -112,20 +113,24 @@ func main() {
 	c1 := make(chan string)
 	tick(s, c1)
 
-	fmt.Printf("start reading camera device: %v with delay\n", *deviceID, *delayMs)
+	fmt.Printf("start reading camera device: %v with delay %v ms\n", *deviceID, *delayMs)
 	for {
+		if ok := webcam.Read(img); !ok {
+			fmt.Printf("cannot read device %d\n", *deviceID)
+			return
+		}
 		select {
 		case msg := <-c1:
-			fmt.Printf("msg: %v\n", msg)
-			if ok := webcam.Read(img); !ok {
-				fmt.Printf("cannot read device %d\n", *deviceID)
-				return
-			}
-			pt := processFrame(window, img, gray)
-			err := w.Write([]string{strconv.Itoa(pt.X), strconv.Itoa(pt.Y)})
-			if err != nil {
-				fmt.Printf("Can not write TSV data: %v\n", err)
-			}
+			fmt.Printf("%v msg: %v\n", time.Now(), msg)
+
+			go func() {
+				pt := processFrame(window, img, gray)
+				err := w.Write([]string{strconv.Itoa(pt.X), strconv.Itoa(pt.Y)})
+				if err != nil {
+					fmt.Printf("Can not write TSV data: %v\n", err)
+				}
+				window.IMShow(img)
+			}()
 
 			if msg == "stop" {
 				ticker.Stop()
@@ -134,7 +139,11 @@ func main() {
 		case _ = <-cs:
 			ticker.Stop()
 			stop = true
+		default:
+			window.IMShow(img)
 		}
+
+		window.WaitKey(1)
 		if stop == true {
 			break
 		}
@@ -143,11 +152,13 @@ func main() {
 }
 
 func tick(s *serial.Port, c1 chan string) {
+	dur := time.Duration(*delayMs/2) * time.Millisecond
 	// start a routine to activate the LEDs
 	go func() {
 		for _ = range ticker.C {
 			ledSequence(s, c1)
-			time.AfterFunc(time.Duration(*delayMs/2)*time.Millisecond, func() {
+			fmt.Printf("Take picture in %v ms\n", dur.Seconds()*1000)
+			time.AfterFunc(dur, func() {
 				c1 <- "tick"
 			})
 		}
@@ -166,11 +177,11 @@ func processFrame(window *gocv.Window, img, gray gocv.Mat) *image.Point {
 	_, _, _, maxLoc := gocv.MinMaxLoc(gray)
 
 	// draw a rectangle around the bright spot
-	gocv.Rectangle(gray, image.Rect(maxLoc.X-6, maxLoc.Y-6, maxLoc.X+6, maxLoc.Y+6), blue, 3)
+	gocv.Rectangle(img, image.Rect(maxLoc.X-6, maxLoc.Y-6, maxLoc.X+6, maxLoc.Y+6), blue, 3)
 
 	// show the image in the window, and wait 1 millisecond
-	window.IMShow(gray)
-	window.WaitKey(*delayMs)
+	//window.IMShow(img)
+	//window.WaitKey(1)
 
 	fmt.Printf("%d x %d\n", maxLoc.X, maxLoc.Y)
 	return &maxLoc
