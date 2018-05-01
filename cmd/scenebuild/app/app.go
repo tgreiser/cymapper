@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/tgreiser/cymapper/cmd/scenebuild/fixture"
+
 	"github.com/g3n/engine/gui"
 	"github.com/g3n/engine/light"
 	"github.com/g3n/engine/math32"
@@ -21,7 +23,6 @@ import (
 type App struct {
 	*application.Application                    // Embedded standard application object
 	log                      *logger.Logger     // Application logger
-	currentScreen            IScreen            // Current screen being rendered
 	dirData                  string             // full path of data directory
 	labelFPS                 *gui.Label         // header FPS label
 	stats                    *stats.Stats       // statistics object
@@ -30,7 +31,7 @@ type App struct {
 	fs                       *FileSelect        // File select dialog
 	ed                       *ErrorDialog       // Error dialog
 	ambLight                 *light.Ambient
-	finalizers               []func() // List of demo finalizers functions
+	fixtures                 []*fixture.Fixture
 }
 
 type IScreen interface {
@@ -116,13 +117,6 @@ func Create() *App {
 	// Setup scene
 	app.setupScene()
 
-	// Subscribe to before render events to call current test Render method
-	app.Subscribe(application.OnBeforeRender, func(evname string, ev interface{}) {
-		if app.currentScreen != nil {
-			app.currentScreen.Render(app)
-		}
-	})
-
 	// Subscribe to after render events to update the FPS
 	app.Subscribe(application.OnAfterRender, func(evname string, ev interface{}) {
 		// Update statistics
@@ -146,12 +140,6 @@ func Create() *App {
 
 // setupScene resets the current scene for executing a new (or first) test
 func (app *App) setupScene() {
-	// Execute demo finalizers functions and clear finalizers list
-	for i := 0; i < len(app.finalizers); i++ {
-		app.finalizers[i]()
-	}
-	app.finalizers = app.finalizers[0:0]
-
 	// Cancel next events and clear all window subscriptions
 	app.Window().CancelDispatch()
 	app.Window().ClearSubscriptions()
@@ -245,12 +233,6 @@ func (app *App) ControlFolder() *gui.ControlFolder {
 func (app *App) AmbLight() *light.Ambient {
 
 	return app.ambLight
-}
-
-// AddFinalizer adds a function which will be executed before another demo is started
-func (app *App) AddFinalizer(f func()) {
-
-	app.finalizers = append(app.finalizers, f)
 }
 
 // UpdateFPS updates the fps value in the window title or header label

@@ -12,11 +12,13 @@ import (
 )
 
 type Fixture struct {
-	filepath string            // File path
-	pts      []*math32.Vector3 // List of relative LED coordinates
-	tl       math32.Vector3    // Top left corner
-	br       math32.Vector3    // Bottom right corner
-	idx      int               // internal pointer
+	filepath  string            // File path
+	pts       []*math32.Vector3 // List of relative LED coordinates
+	tl        math32.Vector3    // Top left corner
+	br        math32.Vector3    // Bottom right corner
+	idx       int               // internal pointer
+	translate math32.Vector3    // translate
+	scale     math32.Vector3    // matrix multiply to scale points
 }
 
 func New(path string) *Fixture {
@@ -63,7 +65,13 @@ func New(path string) *Fixture {
 	}
 	f.tl = *math32.NewVector3(ftlx, ftly, 0)
 	f.br = *math32.NewVector3(fbrx, fbry, 0)
+	f.ResetTransformation()
 	return f
+}
+
+func (f *Fixture) ResetTransformation() {
+	f.SetScale(*math32.NewVector3(1.0, 1.0, 1.0))
+	f.SetTranslate(*math32.NewVector3(0.0, 0.0, 0.0))
 }
 
 func (f *Fixture) Available() bool {
@@ -75,10 +83,18 @@ func (f *Fixture) Next() *math32.Vector3 {
 	return f.pts[f.idx]
 }
 
-func (f Fixture) TopLeft() math32.Vector3 {
-	return f.tl
+func (f Fixture) TopLeft() *math32.Vector3 {
+	return &f.tl
 }
 
-func (f Fixture) BottomRight() math32.Vector3 {
-	return f.br
+func (f Fixture) BottomRight() *math32.Vector3 {
+	return &f.br
+}
+
+func (f *Fixture) SetTranslate(t math32.Vector3) {
+	f.translate = t
+}
+
+func (f *Fixture) SetScale(s math32.Vector3) {
+	f.scale = s
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/g3n/engine/gui"
 	"github.com/g3n/engine/material"
 	"github.com/g3n/engine/math32"
+	"github.com/g3n/engine/window"
 	"github.com/tgreiser/cymapper/cmd/scenebuild/fixture"
 )
 
@@ -26,6 +27,13 @@ func (app *App) buildGui() {
 	canvas.SetRenderable(false)
 	canvas.SetColor4(&gui.StyleDefault().Scroller.BgColor)
 	canvas.SetLayoutParams(&gui.DockLayoutParams{Edge: gui.DockCenter})
+	canvas.Subscribe(gui.OnMouseDown, func(name string, ev interface{}) {
+		mev := ev.(*window.MouseEvent)
+		//width, height := app.Window().Size()
+		x := mev.Xpos
+		y := mev.Ypos
+		app.Log().Debug("%v x %v\n", x, y)
+	})
 	app.Gui().Add(canvas)
 	app.SetPanel3D(canvas)
 
@@ -96,7 +104,7 @@ func (app *App) buildGui() {
 
 	cpanel.Add(fixtures)
 	fixtures.Subscribe(gui.OnChange, func(name string, ev interface{}) {
-		app.Log().Debug("Change fixture " + fixtures.Selected().Text())
+		app.Log().Debug("Change fixture %v %v", name, fixtures.Selected().Text())
 	})
 
 	bAddFixture := gui.NewButton("Add Fixture")
@@ -106,17 +114,6 @@ func (app *App) buildGui() {
 		app.fs.Show(true)
 	})
 	cpanel.Add(bAddFixture)
-
-	bReset := gui.NewButton("Reset")
-	bReset.SetPosition(100, 50)
-	bReset.Subscribe(gui.OnClick, func(name string, ev interface{}) {
-		app.Scene().RemoveAll(true)
-		app.setupScene()
-		fixtures.RemoveAll(false)
-		fixtures.Add(gui.NewImageLabel(""))
-		fixtures.SelectPos(0)
-	})
-	cpanel.Add(bReset)
 
 	// Fixture corner controls
 	lx := gui.NewLabel("X")
@@ -136,10 +133,12 @@ func (app *App) buildGui() {
 
 	tlx := gui.NewEdit(50, "")
 	tlx.SetPosition(462, 32)
+	tlx.Subscribe(gui.OnChange, app.tlChange)
 	cpanel.Add(tlx)
 
 	tly := gui.NewEdit(50, "")
 	tly.SetPosition(522, 32)
+	tly.Subscribe(gui.OnChange, app.tlChange)
 	cpanel.Add(tly)
 
 	br := gui.NewLabel("Bottom Right")
@@ -154,6 +153,21 @@ func (app *App) buildGui() {
 	bry := gui.NewEdit(50, "")
 	bry.SetPosition(522, 52)
 	cpanel.Add(bry)
+
+	bReset := gui.NewButton("Reset")
+	bReset.SetPosition(100, 50)
+	bReset.Subscribe(gui.OnClick, func(name string, ev interface{}) {
+		app.Scene().RemoveAll(true)
+		app.setupScene()
+		fixtures.RemoveAll(false)
+		fixtures.Add(gui.NewImageLabel(""))
+		fixtures.SelectPos(0)
+		tlx.SetText("")
+		tly.SetText("")
+		brx.SetText("")
+		bry.SetText("")
+	})
+	cpanel.Add(bReset)
 
 	// Creates file selection dialog
 	fs, err := NewFileSelect(400, 300)
@@ -171,21 +185,8 @@ func (app *App) buildGui() {
 		app.log.Info("Selected file: %v", fpath)
 		// parse relative vectors for fixture
 		fixture := fixture.New(fpath)
-		mat := material.NewStandard(math32.NewColor("White"))
-		mat.SetSide(material.SideDouble)
-		mat.SetWireframe(false)
-		// add fixture vectors to scene
-		for fixture.Available() {
-			geom := geometry.NewCircle(3, 16)
-			circle := graphic.NewMesh(geom, mat)
-			circle.SetPositionVec(fixture.Next())
-			app.Scene().Add(circle)
-		}
-		err = app.Renderer().AddDefaultShaders()
-		if err != nil {
-			panic(err)
-		}
-		app.Renderer().SetScene(app.Scene())
+		app.fixtures = append(app.fixtures, fixture)
+		app.DrawFixtures()
 		app.fs.Show(false)
 
 		fixtures.Add(gui.NewImageLabel(filepath.Base(fpath)))
@@ -202,4 +203,41 @@ func (app *App) buildGui() {
 	app.Gui().Add(app.fs)
 
 	app.Gui().Add(cpanel)
+}
+
+func (app *App) tlChange(name string, ev interface{}) {
+
+}
+
+func (app *App) DrawFixtures() {
+	mat := material.NewStandard(math32.NewColor("White"))
+	mat.SetSide(material.SideDouble)
+	mat.SetWireframe(false)
+
+	rmat := material.NewStandard(math32.NewColor("red"))
+	rmat.SetSide(material.SideFront)
+	rmat.SetWireframe(true)
+	rmat.SetLineWidth(1)
+
+	l := len(app.fixtures)
+	for iX := 0; iX < l; iX++ {
+		// add fixture vectors to scene
+		for app.fixtures[iX].Available() {
+			geom := geometry.NewCircle(3, 16)
+			circle := graphic.NewMesh(geom, mat)
+			circle.SetPositionVec(app.fixtures[iX].Next())
+			app.Scene().Add(circle)
+		}
+		circle := graphic.NewMesh(geometry.NewCircle(6, 16), rmat)
+		circle.SetPositionVec(app.fixtures[iX].TopLeft())
+		app.Scene().Add(circle)
+		circle = graphic.NewMesh(geometry.NewCircle(6, 16), rmat)
+		circle.SetPositionVec(app.fixtures[iX].BottomRight())
+		app.Scene().Add(circle)
+	}
+	err := app.Renderer().AddDefaultShaders()
+	if err != nil {
+		panic(err)
+	}
+	app.Renderer().SetScene(app.Scene())
 }
