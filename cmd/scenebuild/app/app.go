@@ -32,6 +32,7 @@ type App struct {
 	ed                       *ErrorDialog       // Error dialog
 	ambLight                 *light.Ambient
 	fixtures                 []*fixture.Fixture
+	selected                 int // selected fixture
 }
 
 type IScreen interface {
@@ -64,7 +65,7 @@ func Create() *App {
 	a, err := application.Create(application.Options{
 		Title:       progName,
 		Width:       800,
-		Height:      600,
+		Height:      800,
 		Fullscreen:  false,
 		LogPrefix:   "CYSCENE",
 		LogLevel:    logger.DEBUG,
@@ -109,13 +110,13 @@ func Create() *App {
 	app.dirData = app.checkDirData("data")
 	app.log.Info("Using data directory:%s", app.dirData)
 
+	// Setup scene
+	app.setupScene()
+
 	// Builds user interface
 	if *oNogui == false {
 		app.buildGui()
 	}
-
-	// Setup scene
-	app.setupScene()
 
 	// Subscribe to after render events to update the FPS
 	app.Subscribe(application.OnAfterRender, func(evname string, ev interface{}) {

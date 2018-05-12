@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/g3n/engine/geometry"
+	"github.com/g3n/engine/gls"
 	"github.com/g3n/engine/graphic"
 	"github.com/g3n/engine/gui"
 	"github.com/g3n/engine/material"
@@ -30,9 +31,10 @@ func (app *App) buildGui() {
 	canvas.Subscribe(gui.OnMouseDown, func(name string, ev interface{}) {
 		mev := ev.(*window.MouseEvent)
 		//width, height := app.Window().Size()
+		w, h := canvas.Size()
 		x := mev.Xpos
 		y := mev.Ypos
-		app.Log().Debug("%v x %v\n", x, y)
+		app.Log().Debug("%v x %v in window %v x %v\n", x, y, w, h)
 	})
 	app.Gui().Add(canvas)
 	app.SetPanel3D(canvas)
@@ -104,7 +106,8 @@ func (app *App) buildGui() {
 
 	cpanel.Add(fixtures)
 	fixtures.Subscribe(gui.OnChange, func(name string, ev interface{}) {
-		app.Log().Debug("Change fixture %v %v", name, fixtures.Selected().Text())
+		app.selected = fixtures.SelectedPos()
+		app.Log().Debug("Change fixture %v %v", fixtures.SelectedPos(), fixtures.Selected().Text())
 	})
 
 	bAddFixture := gui.NewButton("Add Fixture")
@@ -133,12 +136,10 @@ func (app *App) buildGui() {
 
 	tlx := gui.NewEdit(50, "")
 	tlx.SetPosition(462, 32)
-	tlx.Subscribe(gui.OnChange, app.tlChange)
 	cpanel.Add(tlx)
 
 	tly := gui.NewEdit(50, "")
 	tly.SetPosition(522, 32)
-	tly.Subscribe(gui.OnChange, app.tlChange)
 	cpanel.Add(tly)
 
 	br := gui.NewLabel("Bottom Right")
@@ -154,20 +155,93 @@ func (app *App) buildGui() {
 	bry.SetPosition(522, 52)
 	cpanel.Add(bry)
 
+	wl := gui.NewLabel("Width")
+	wl.SetPosition(600, 32)
+	wl.SetColor(darkTextColor)
+	cpanel.Add(wl)
+
+	we := gui.NewEdit(50, "640")
+	we.SetText("640")
+	we.SetPosition(650, 32)
+
+	cpanel.Add(we)
+
+	hl := gui.NewLabel("Height")
+	hl.SetPosition(600, 52)
+	hl.SetColor(darkTextColor)
+	cpanel.Add(hl)
+
+	he := gui.NewEdit(50, "480")
+	he.SetText("480")
+	he.SetPosition(650, 52)
+	drawBounds := func(name string, ev interface{}) {
+		app.DrawBounds(we.Text(), he.Text())
+	}
+	we.Subscribe(gui.OnChange, drawBounds)
+	he.Subscribe(gui.OnChange, drawBounds)
+	cpanel.Add(he)
+	app.DrawBounds(we.Text(), he.Text())
+
 	bReset := gui.NewButton("Reset")
 	bReset.SetPosition(100, 50)
 	bReset.Subscribe(gui.OnClick, func(name string, ev interface{}) {
 		app.Scene().RemoveAll(true)
 		app.setupScene()
-		fixtures.RemoveAll(false)
-		fixtures.Add(gui.NewImageLabel(""))
-		fixtures.SelectPos(0)
+		// TODO - make fixtures reset correctly
+		// currently it disappears
+		fixtures.SelectPos(-1)
+		fixtures.RemoveAll(true)
+
+		app.selected = -1
+		app.fixtures = app.fixtures[:0]
+
 		tlx.SetText("")
 		tly.SetText("")
 		brx.SetText("")
 		bry.SetText("")
+		drawBounds("", "")
 	})
 	cpanel.Add(bReset)
+
+	xform := func(name string, ev interface{}) {
+		// use app.selected to calculate transformations
+		// orig TL - app.fixtures[app.selected].tl
+		// orig BR - app.fixtures[app.selected].br
+		// new TL - tlx.Text(), tly.Text()
+		// new BR - brx.Text(), bry.Text()
+		ntlx, err := strconv.ParseFloat(tlx.Text(), 32)
+		if err != nil {
+			app.Log().Error("Invalid top left coordinates %v\n", tlx.Text())
+		}
+		ntly, err := strconv.ParseFloat(tly.Text(), 32)
+		if err != nil {
+			app.Log().Error("Invalid top left coordinates %v\n", tly.Text())
+		}
+		nbrx, err := strconv.ParseFloat(brx.Text(), 32)
+		if err != nil {
+			app.Log().Error("Invalid bottom right coordinates %v\n", brx.Text())
+		}
+		nbry, err := strconv.ParseFloat(bry.Text(), 32)
+		if err != nil {
+			app.Log().Error("Invalid bottom right coordinates %v\n", bry.Text())
+		}
+
+		newTL := math32.NewVector3(float32(ntlx), float32(ntly), 0)
+		newBR := math32.NewVector3(float32(nbrx), float32(nbry), 0)
+		sc, tr := fixture.NewTransformation(app.fixtures[app.selected].TopLeft(),
+			app.fixtures[app.selected].BottomRight(), newTL, newBR)
+		app.fixtures[app.selected].Transform(sc, tr)
+		app.Log().Debug("SC %v x %v TR %v x %v\n", sc.X, sc.Y, tr.X, tr.Y)
+
+		app.Scene().RemoveAll(false)
+		app.setupScene()
+		drawBounds("", "")
+		app.DrawFixtures()
+	}
+	tlx.Subscribe(gui.OnChange, xform)
+	tly.Subscribe(gui.OnChange, xform)
+	brx.Subscribe(gui.OnChange, xform)
+	bry.Subscribe(gui.OnChange, xform)
 
 	// Creates file selection dialog
 	fs, err := NewFileSelect(400, 300)
@@ -203,10 +277,45 @@ func (app *App) buildGui() {
 	app.Gui().Add(app.fs)
 
 	app.Gui().Add(cpanel)
+
+	err = app.Renderer().AddDefaultShaders()
+	if err != nil {
+		panic(err)
+	}
+	app.Renderer().SetScene(app.Scene())
 }
 
-func (app *App) tlChange(name string, ev interface{}) {
+func (app *App) DrawBounds(width, height string) {
+	mat := material.NewBasic()
 
+	geom := geometry.NewGeometry()
+	vertices := math32.NewArrayF32(0, 16)
+	vertices.Append(
+		0, 0, 0,
+		0, 480, 0,
+		0, 480, 0,
+		640, 480, 0,
+		640, 480, 0,
+		640, 0, 0,
+		640, 0, 0,
+		0, 0, 0,
+	)
+	colors := math32.NewArrayF32(0, 16)
+	colors.Append(
+		1, 1, 1,
+		1, 1, 1,
+		1, 1, 1,
+		1, 1, 1,
+		1, 1, 1,
+		1, 1, 1,
+		1, 1, 1,
+		1, 1, 1,
+	)
+	geom.AddVBO(gls.NewVBO().AddAttrib("VertexPosition", 3).SetBuffer(vertices))
+	geom.AddVBO(gls.NewVBO().AddAttrib("VertexColor", 3).SetBuffer(colors))
+
+	box := graphic.NewLines(geom, mat)
+	app.Scene().Add(box)
 }
 
 func (app *App) DrawFixtures() {
@@ -222,11 +331,13 @@ func (app *App) DrawFixtures() {
 	l := len(app.fixtures)
 	for iX := 0; iX < l; iX++ {
 		// add fixture vectors to scene
+		app.fixtures[iX].Reset()
 		for app.fixtures[iX].Available() {
 			geom := geometry.NewCircle(3, 16)
 			circle := graphic.NewMesh(geom, mat)
 			circle.SetPositionVec(app.fixtures[iX].Next())
 			app.Scene().Add(circle)
+			app.Log().Debug("%v", circle.Position())
 		}
 		circle := graphic.NewMesh(geometry.NewCircle(6, 16), rmat)
 		circle.SetPositionVec(app.fixtures[iX].TopLeft())
