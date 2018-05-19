@@ -13,10 +13,12 @@ import (
 
 type FileSelect struct {
 	gui.Panel
-	path *gui.Label
-	list *gui.List
-	bok  *gui.Button
-	bcan *gui.Button
+	title    *gui.Label
+	path     *gui.Label
+	filename *gui.Edit
+	list     *gui.List
+	bok      *gui.Button
+	bcan     *gui.Button
 }
 
 func NewFileSelect(width, height float32) (*FileSelect, error) {
@@ -34,8 +36,14 @@ func NewFileSelect(width, height float32) (*FileSelect, error) {
 	l.SetSpacing(4)
 	fs.SetLayout(l)
 
+	fs.title = gui.NewLabel("title")
+	fs.title.SetColor(math32.NewColor("Black"))
+	fs.Add(fs.title)
+
 	// Creates path label
 	fs.path = gui.NewLabel("path")
+	fs.path.SetText("test")
+	fs.path.SetColor(math32.NewColor("Black"))
 	fs.Add(fs.path)
 
 	// Creates list
@@ -45,6 +53,10 @@ func NewFileSelect(width, height float32) (*FileSelect, error) {
 		fs.onSelect()
 	})
 	fs.Add(fs.list)
+
+	fs.filename = gui.NewEdit(400, "")
+	fs.path.SetColor(math32.NewColor("White"))
+	fs.Add(fs.filename)
 
 	// Button container panel
 	bc := gui.NewPanel(0, 0)
@@ -94,6 +106,14 @@ func (fs *FileSelect) Show(show bool) {
 	}
 }
 
+func (fs *FileSelect) SetTitle(title string) {
+	fs.title.SetText(title)
+}
+
+func (fs *FileSelect) SetFilename(name string) {
+	fs.filename.SetText(name)
+}
+
 func (fs *FileSelect) SetPath(path string) error {
 
 	// Open path file or dir
@@ -139,6 +159,10 @@ func (fs *FileSelect) Selected() string {
 
 	selist := fs.list.Selected()
 	if len(selist) == 0 {
+		fn := fs.filename.Text()
+		if len(fn) > 1 {
+			return filepath.Join(fs.path.Text(), fn)
+		}
 		return ""
 	}
 	label := selist[0].(*gui.ImageLabel)
@@ -169,6 +193,8 @@ func (fs *FileSelect) onSelect() {
 	}
 	if s.IsDir() {
 		fs.SetPath(path)
+	} else {
+		fs.SetFilename(text)
 	}
 }
 

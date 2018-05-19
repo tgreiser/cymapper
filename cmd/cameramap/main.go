@@ -20,7 +20,7 @@ var tsvPath = flag.String("file", "output.tsv", "Filename for the tsv output")
 var leds = flag.Int("leds", 460, "Number of LEDs per strip (1-10000)")
 var pins = flag.Int("pins", 8, "Number of pins which have LEDs connected")
 var radius = flag.Int("radius", 7, "Radius of the gaussian blur used for noise reduction")
-
+var brightness = flag.Int("brightness", 64, "LED brightness (1-255)")
 var deviceID = flag.Int("device-id", 0, "Device ID of your webcam")
 var comPort = flag.String("com", "COM8", "COM port for teensy")
 var delayMs = flag.Int("delay-ms", 1000, "Number of milliseconds to pause on each LED")
@@ -193,7 +193,7 @@ func ledSequence(s *serial.Port, c chan string) {
 
 	for iX := 0; iX < bufLen; iX++ {
 		if iX >= counter && iX < counter+3 {
-			buf[iX] = 255
+			buf[iX] = byte(*brightness)
 		} else {
 			buf[iX] = 0
 		}

@@ -29,7 +29,8 @@ type App struct {
 	statsTable               *stats.StatsTable  // statistics table panel
 	control                  *gui.ControlFolder // Pointer to gui control panel
 	fs                       *FileSelect        // File select dialog
-	ed                       *ErrorDialog       // Error dialog
+	sceneFS                  *FileSelect
+	ed                       *ErrorDialog // Error dialog
 	ambLight                 *light.Ambient
 	fixtures                 []*fixture.Fixture
 	selected                 int // selected fixture

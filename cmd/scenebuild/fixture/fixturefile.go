@@ -96,10 +96,18 @@ func (f *Fixture) Reset() {
 }
 
 func (f Fixture) TopLeft() *math32.Vector3 {
-	return f.ttl
+	return f.tl
 }
 
 func (f Fixture) BottomRight() *math32.Vector3 {
+	return f.br
+}
+
+func (f Fixture) TransformedTopLeft() *math32.Vector3 {
+	return f.ttl
+}
+
+func (f Fixture) TransformedBottomRight() *math32.Vector3 {
 	return f.tbr
 }
 
@@ -107,8 +115,8 @@ func (f *Fixture) Transformed() []*math32.Vector3 {
 	f.tpts = make([]*math32.Vector3, len(f.pts), len(f.pts))
 	for iP, p := range f.pts {
 		f.tpts[iP] = math32.NewVector3(
-			(p.X+f.translate.X)*f.scale.X,
-			(p.Y+f.translate.Y)*f.scale.Y, 0)
+			(p.X*f.scale.X)+f.translate.X,
+			(p.Y*f.scale.Y)+f.translate.Y, 0)
 	}
 	return f.tpts
 }

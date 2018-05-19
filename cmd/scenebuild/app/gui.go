@@ -42,9 +42,9 @@ func (app *App) buildGui() {
 	// Adds header after the gui central panel to ensure that the control folder
 	// stays over the gui panel when opened.
 	lightTextColor := math32.Color4{0.8, 0.8, 0.8, 1}
-	header := gui.NewPanel(600, 40)
+	header := gui.NewPanel(600, 30)
 	header.SetBorders(0, 0, 1, 0)
-	header.SetPaddings(4, 4, 4, 4)
+	header.SetPaddings(5, 5, 5, 5)
 	header.SetColor(math32.NewColorHex(0x956eff))
 	header.SetLayoutParams(&gui.DockLayoutParams{Edge: gui.DockTop})
 
@@ -95,14 +95,14 @@ func (app *App) buildGui() {
 	cpanel.SetLayoutParams(&gui.DockLayoutParams{Edge: gui.DockTop})
 
 	l2 := gui.NewLabel("Build a scene by adding, moving and resizing fixture maps.")
-	l2.SetPosition(10, 10)
+	l2.SetPosition(0, 0)
 	l2.SetPaddings(2, 2, 2, 2)
 	l2.SetColor(darkTextColor)
 	cpanel.Add(l2)
 
 	fixtures := gui.NewDropDown(200, gui.NewImageLabel(""))
-	fixtures.SetHeight(30)
-	fixtures.SetPosition(160, 50)
+	fixtures.SetHeight(26)
+	fixtures.SetPosition(162, 22)
 
 	cpanel.Add(fixtures)
 	fixtures.Subscribe(gui.OnChange, func(name string, ev interface{}) {
@@ -111,12 +111,22 @@ func (app *App) buildGui() {
 	})
 
 	bAddFixture := gui.NewButton("Add Fixture")
-	bAddFixture.SetPosition(10, 50)
+	bAddFixture.SetPosition(4, 22)
+	bAddFixture.SetWidth(90)
 	bAddFixture.Subscribe(gui.OnClick, func(name string, ev interface{}) {
 		// browse for file
 		app.fs.Show(true)
 	})
 	cpanel.Add(bAddFixture)
+
+	bSaveScene := gui.NewButton("Save Scene")
+	bSaveScene.SetPosition(4, 52)
+	bSaveScene.SetWidth(90)
+	bSaveScene.Subscribe(gui.OnClick, func(name string, ev interface{}) {
+		// save scene dialog
+		app.sceneFS.Show(true)
+	})
+	cpanel.Add(bSaveScene)
 
 	// Fixture corner controls
 	lx := gui.NewLabel("X")
@@ -183,7 +193,8 @@ func (app *App) buildGui() {
 	app.DrawBounds(we.Text(), he.Text())
 
 	bReset := gui.NewButton("Reset")
-	bReset.SetPosition(100, 50)
+	bReset.SetPosition(98, 22)
+	bReset.SetWidth(60)
 	bReset.Subscribe(gui.OnClick, func(name string, ev interface{}) {
 		app.Scene().RemoveAll(true)
 		app.setupScene()
@@ -231,6 +242,7 @@ func (app *App) buildGui() {
 		sc, tr := fixture.NewTransformation(app.fixtures[app.selected].TopLeft(),
 			app.fixtures[app.selected].BottomRight(), newTL, newBR)
 		app.fixtures[app.selected].Transform(sc, tr)
+		app.Log().Debug("selected %v x %v\n", app.fixtures[app.selected].TopLeft(), app.fixtures[app.selected].BottomRight())
 		app.Log().Debug("SC %v x %v TR %v x %v\n", sc.X, sc.Y, tr.X, tr.Y)
 
 		app.Scene().RemoveAll(false)
@@ -243,13 +255,37 @@ func (app *App) buildGui() {
 	brx.Subscribe(gui.OnChange, xform)
 	bry.Subscribe(gui.OnChange, xform)
 
-	// Creates file selection dialog
+	// Save Scene - File Select
+	ss, err := NewFileSelect(400, 300)
+	if err != nil {
+		panic(err)
+	}
+	app.sceneFS = ss
+	app.sceneFS.SetVisible(false)
+	app.sceneFS.SetTitle("Save Scene")
+	app.sceneFS.Subscribe("OnOK", func(evname string, ev interface{}) {
+		fpath := app.sceneFS.Selected()
+		if fpath == "" {
+			app.ed.Show("Please enter a path for your scene")
+			return
+		}
+		app.log.Info("Selected file: %v", fpath)
+		app.sceneFS.Show(false)
+		// write all the fixtures merged into a single TSV
+	})
+	app.sceneFS.Subscribe("OnCancel", func(evname string, ev interface{}) {
+		app.sceneFS.Show(false)
+	})
+	app.Gui().Add(app.sceneFS)
+
+	// Add Fixture - File Select
 	fs, err := NewFileSelect(400, 300)
 	if err != nil {
 		panic(err)
 	}
 	app.fs = fs
 	app.fs.SetVisible(false)
+	app.fs.SetTitle("Add Fixture")
 	app.fs.Subscribe("OnOK", func(evname string, ev interface{}) {
 		fpath := app.fs.Selected()
 		if fpath == "" {
@@ -337,13 +373,13 @@ func (app *App) DrawFixtures() {
 			circle := graphic.NewMesh(geom, mat)
 			circle.SetPositionVec(app.fixtures[iX].Next())
 			app.Scene().Add(circle)
-			app.Log().Debug("%v", circle.Position())
+			//app.Log().Debug("%v", circle.Position())
 		}
 		circle := graphic.NewMesh(geometry.NewCircle(6, 16), rmat)
-		circle.SetPositionVec(app.fixtures[iX].TopLeft())
+		circle.SetPositionVec(app.fixtures[iX].TransformedTopLeft())
 		app.Scene().Add(circle)
 		circle = graphic.NewMesh(geometry.NewCircle(6, 16), rmat)
-		circle.SetPositionVec(app.fixtures[iX].BottomRight())
+		circle.SetPositionVec(app.fixtures[iX].TransformedBottomRight())
 		app.Scene().Add(circle)
 	}
 	err := app.Renderer().AddDefaultShaders()
