@@ -15,7 +15,7 @@ var vwidth = flag.Int("vwidth", 1280, "Width of the video stream you will be map
 var vheight = flag.Int("vheight", 720, "Height of the video stream you will be mapping")
 var border = flag.Int("border", 4, "Unused space to leave around the outer pixels")
 var flipX = flag.Bool("flip-x", false, "Flip the image along the X axis")
-var flipY = flag.Bool("flip-y", true, "Flip the image along the Y axis")
+var flipY = flag.Bool("flip-y", false, "Flip the image along the Y axis")
 
 func init() {
 	flag.Parse()
@@ -65,6 +65,7 @@ func remapPointsAndWrite(pts [][]string, b1, b2, vsize image.Point, w *csv.Write
 	if *flipY {
 		ymult = ymult * -1
 	}
+	fmt.Printf("vsize y %v frame y %v flipY %v\n", vsize.Y, frame.Y, *flipY)
 	fmt.Printf("Transformation: X %v Y %v\n", xmult, ymult)
 	for _, pt := range pts {
 		ptX, err := strconv.ParseFloat(pt[0], 64)
