@@ -108,6 +108,8 @@ func (app *App) buildGui() {
 	fixtures.Subscribe(gui.OnChange, func(name string, ev interface{}) {
 		app.selected = fixtures.SelectedPos()
 		app.Log().Debug("Change fixture %v %v", fixtures.SelectedPos(), fixtures.Selected().Text())
+		app.Draw()
+		app.SetCorners()
 	})
 
 	bAddFixture := gui.NewButton("Add Fixture")
@@ -144,53 +146,55 @@ func (app *App) buildGui() {
 	tl.SetColor(darkTextColor)
 	cpanel.Add(tl)
 
-	tlx := gui.NewEdit(50, "")
-	tlx.SetPosition(462, 32)
-	cpanel.Add(tlx)
+	app.tlx = gui.NewEdit(50, "")
+	app.tlx.SetPosition(462, 32)
+	cpanel.Add(app.tlx)
 
-	tly := gui.NewEdit(50, "")
-	tly.SetPosition(522, 32)
-	cpanel.Add(tly)
+	app.tly = gui.NewEdit(50, "")
+	app.tly.SetPosition(522, 32)
+	cpanel.Add(app.tly)
 
 	br := gui.NewLabel("Bottom Right")
 	br.SetPosition(380, 50)
 	br.SetColor(darkTextColor)
 	cpanel.Add(br)
 
-	brx := gui.NewEdit(50, "")
-	brx.SetPosition(462, 52)
-	cpanel.Add(brx)
+	app.brx = gui.NewEdit(50, "")
+	app.brx.SetPosition(462, 52)
+	cpanel.Add(app.brx)
 
-	bry := gui.NewEdit(50, "")
-	bry.SetPosition(522, 52)
-	cpanel.Add(bry)
+	app.bry = gui.NewEdit(50, "")
+	app.bry.SetPosition(522, 52)
+	cpanel.Add(app.bry)
 
 	wl := gui.NewLabel("Width")
 	wl.SetPosition(600, 32)
 	wl.SetColor(darkTextColor)
 	cpanel.Add(wl)
 
-	we := gui.NewEdit(50, "640")
-	we.SetText("640")
-	we.SetPosition(650, 32)
+	app.width = gui.NewEdit(50, FormatFloat32(app.sceneWidth))
+	app.width.SetText(FormatFloat32(app.sceneWidth))
+	app.width.SetPosition(650, 32)
 
-	cpanel.Add(we)
+	cpanel.Add(app.width)
 
 	hl := gui.NewLabel("Height")
 	hl.SetPosition(600, 52)
 	hl.SetColor(darkTextColor)
 	cpanel.Add(hl)
 
-	he := gui.NewEdit(50, "480")
-	he.SetText("480")
-	he.SetPosition(650, 52)
+	app.height = gui.NewEdit(50, FormatFloat32(app.sceneHeight))
+	app.height.SetText(FormatFloat32(app.sceneHeight))
+	app.height.SetPosition(650, 52)
 	drawBounds := func(name string, ev interface{}) {
-		app.DrawBounds(we.Text(), he.Text())
+		app.sceneWidth = ParseFloat32(app.width.Text(), app.sceneWidth)
+		app.sceneHeight = ParseFloat32(app.height.Text(), app.sceneHeight)
+		app.Draw()
 	}
-	we.Subscribe(gui.OnChange, drawBounds)
-	he.Subscribe(gui.OnChange, drawBounds)
-	cpanel.Add(he)
-	app.DrawBounds(we.Text(), he.Text())
+	app.width.Subscribe(gui.OnChange, drawBounds)
+	app.height.Subscribe(gui.OnChange, drawBounds)
+	cpanel.Add(app.height)
+	app.Draw()
 
 	bReset := gui.NewButton("Reset")
 	bReset.SetPosition(98, 22)
@@ -206,10 +210,10 @@ func (app *App) buildGui() {
 		app.selected = -1
 		app.fixtures = app.fixtures[:0]
 
-		tlx.SetText("")
-		tly.SetText("")
-		brx.SetText("")
-		bry.SetText("")
+		app.tlx.SetText("")
+		app.tly.SetText("")
+		app.brx.SetText("")
+		app.bry.SetText("")
 		drawBounds("", "")
 	})
 	cpanel.Add(bReset)
@@ -220,21 +224,21 @@ func (app *App) buildGui() {
 		// orig BR - app.fixtures[app.selected].br
 		// new TL - tlx.Text(), tly.Text()
 		// new BR - brx.Text(), bry.Text()
-		ntlx, err := strconv.ParseFloat(tlx.Text(), 32)
+		ntlx, err := strconv.ParseFloat(app.tlx.Text(), 32)
 		if err != nil {
-			app.Log().Error("Invalid top left coordinates %v\n", tlx.Text())
+			app.Log().Error("Invalid top left coordinates %v\n", app.tlx.Text())
 		}
-		ntly, err := strconv.ParseFloat(tly.Text(), 32)
+		ntly, err := strconv.ParseFloat(app.tly.Text(), 32)
 		if err != nil {
-			app.Log().Error("Invalid top left coordinates %v\n", tly.Text())
+			app.Log().Error("Invalid top left coordinates %v\n", app.tly.Text())
 		}
-		nbrx, err := strconv.ParseFloat(brx.Text(), 32)
+		nbrx, err := strconv.ParseFloat(app.brx.Text(), 32)
 		if err != nil {
-			app.Log().Error("Invalid bottom right coordinates %v\n", brx.Text())
+			app.Log().Error("Invalid bottom right coordinates %v\n", app.brx.Text())
 		}
-		nbry, err := strconv.ParseFloat(bry.Text(), 32)
+		nbry, err := strconv.ParseFloat(app.bry.Text(), 32)
 		if err != nil {
-			app.Log().Error("Invalid bottom right coordinates %v\n", bry.Text())
+			app.Log().Error("Invalid bottom right coordinates %v\n", app.bry.Text())
 		}
 
 		newTL := math32.NewVector3(float32(ntlx), float32(ntly), 0)
@@ -245,15 +249,12 @@ func (app *App) buildGui() {
 		app.Log().Debug("selected %v x %v\n", app.fixtures[app.selected].TopLeft(), app.fixtures[app.selected].BottomRight())
 		app.Log().Debug("SC %v x %v TR %v x %v\n", sc.X, sc.Y, tr.X, tr.Y)
 
-		app.Scene().RemoveAll(false)
-		app.setupScene()
-		drawBounds("", "")
-		app.DrawFixtures()
+		app.Draw()
 	}
-	tlx.Subscribe(gui.OnChange, xform)
-	tly.Subscribe(gui.OnChange, xform)
-	brx.Subscribe(gui.OnChange, xform)
-	bry.Subscribe(gui.OnChange, xform)
+	app.tlx.Subscribe(gui.OnChange, xform)
+	app.tly.Subscribe(gui.OnChange, xform)
+	app.brx.Subscribe(gui.OnChange, xform)
+	app.bry.Subscribe(gui.OnChange, xform)
 
 	// Save Scene - File Select
 	ss, err := NewFileSelect(400, 300)
@@ -272,6 +273,8 @@ func (app *App) buildGui() {
 		app.log.Info("Selected file: %v", fpath)
 		app.sceneFS.Show(false)
 		// write all the fixtures merged into a single TSV
+		scene := fixture.NewScene(app.fixtures)
+		scene.SaveAs(fpath)
 	})
 	app.sceneFS.Subscribe("OnCancel", func(evname string, ev interface{}) {
 		app.sceneFS.Show(false)
@@ -302,10 +305,7 @@ func (app *App) buildGui() {
 		fixtures.Add(gui.NewImageLabel(filepath.Base(fpath)))
 		fixtures.SelectPos(fixtures.Len() - 1)
 
-		tlx.SetText(strconv.FormatFloat(float64(fixture.TopLeft().X), 'f', 2, 32))
-		tly.SetText(strconv.FormatFloat(float64(fixture.TopLeft().Y), 'f', 2, 32))
-		brx.SetText(strconv.FormatFloat(float64(fixture.BottomRight().X), 'f', 2, 32))
-		bry.SetText(strconv.FormatFloat(float64(fixture.BottomRight().Y), 'f', 2, 32))
+		app.SetCorners()
 	})
 	app.fs.Subscribe("OnCancel", func(evname string, ev interface{}) {
 		app.fs.Show(false)
@@ -321,19 +321,44 @@ func (app *App) buildGui() {
 	app.Renderer().SetScene(app.Scene())
 }
 
-func (app *App) DrawBounds(width, height string) {
+func (app *App) SetCorners() {
+	fixture := app.fixtures[app.selected]
+	app.tlx.SetText(FormatFloat32(fixture.TransformedTopLeft().X))
+	app.tly.SetText(FormatFloat32(fixture.TransformedTopLeft().Y))
+	app.brx.SetText(FormatFloat32(fixture.TransformedBottomRight().X))
+	app.bry.SetText(FormatFloat32(fixture.TransformedBottomRight().Y))
+}
+
+func (app *App) Draw() {
+	app.Scene().RemoveAll(false)
+	app.setupScene()
+	app.DrawBounds()
+	app.DrawFixtures()
+}
+
+func (app *App) DrawBounds() {
 	mat := material.NewBasic()
 
-	geom := geometry.NewGeometry()
+	gmat := material.NewStandard(math32.NewColor("green"))
+	gmat.SetSide(material.SideFront)
+	gmat.SetWireframe(true)
+	gmat.SetLineWidth(1)
+
+	geom := geometry.NewCircle(1, 16)
+	circle := graphic.NewMesh(geom, gmat)
+	circle.SetPosition(app.sceneWidth/2, app.sceneHeight/2, 0)
+	app.Scene().Add(circle)
+
+	geom2 := geometry.NewGeometry()
 	vertices := math32.NewArrayF32(0, 16)
 	vertices.Append(
 		0, 0, 0,
-		0, 480, 0,
-		0, 480, 0,
-		640, 480, 0,
-		640, 480, 0,
-		640, 0, 0,
-		640, 0, 0,
+		0, app.sceneHeight, 0,
+		0, app.sceneHeight, 0,
+		app.sceneWidth, app.sceneHeight, 0,
+		app.sceneWidth, app.sceneHeight, 0,
+		app.sceneWidth, 0, 0,
+		app.sceneWidth, 0, 0,
 		0, 0, 0,
 	)
 	colors := math32.NewArrayF32(0, 16)
@@ -347,10 +372,10 @@ func (app *App) DrawBounds(width, height string) {
 		1, 1, 1,
 		1, 1, 1,
 	)
-	geom.AddVBO(gls.NewVBO().AddAttrib("VertexPosition", 3).SetBuffer(vertices))
-	geom.AddVBO(gls.NewVBO().AddAttrib("VertexColor", 3).SetBuffer(colors))
+	geom2.AddVBO(gls.NewVBO().AddAttrib("VertexPosition", 3).SetBuffer(vertices))
+	geom2.AddVBO(gls.NewVBO().AddAttrib("VertexColor", 3).SetBuffer(colors))
 
-	box := graphic.NewLines(geom, mat)
+	box := graphic.NewLines(geom2, mat)
 	app.Scene().Add(box)
 }
 
@@ -375,12 +400,14 @@ func (app *App) DrawFixtures() {
 			app.Scene().Add(circle)
 			//app.Log().Debug("%v", circle.Position())
 		}
-		circle := graphic.NewMesh(geometry.NewCircle(6, 16), rmat)
-		circle.SetPositionVec(app.fixtures[iX].TransformedTopLeft())
-		app.Scene().Add(circle)
-		circle = graphic.NewMesh(geometry.NewCircle(6, 16), rmat)
-		circle.SetPositionVec(app.fixtures[iX].TransformedBottomRight())
-		app.Scene().Add(circle)
+		if iX == app.selected {
+			circle := graphic.NewMesh(geometry.NewCircle(6, 16), rmat)
+			circle.SetPositionVec(app.fixtures[iX].TransformedTopLeft())
+			app.Scene().Add(circle)
+			circle = graphic.NewMesh(geometry.NewCircle(6, 16), rmat)
+			circle.SetPositionVec(app.fixtures[iX].TransformedBottomRight())
+			app.Scene().Add(circle)
+		}
 	}
 	err := app.Renderer().AddDefaultShaders()
 	if err != nil {

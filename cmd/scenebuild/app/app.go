@@ -34,6 +34,14 @@ type App struct {
 	ambLight                 *light.Ambient
 	fixtures                 []*fixture.Fixture
 	selected                 int // selected fixture
+	width                    *gui.Edit
+	height                   *gui.Edit
+	tlx                      *gui.Edit
+	tly                      *gui.Edit
+	brx                      *gui.Edit
+	bry                      *gui.Edit
+	sceneWidth               float32
+	sceneHeight              float32
 }
 
 type IScreen interface {
@@ -77,6 +85,8 @@ func Create() *App {
 		panic(err)
 	}
 	app := new(App)
+	app.sceneWidth = 1280
+	app.sceneHeight = 720
 	app.Application = a
 	app.log = app.Log()
 	app.log.Info("%s v%d.%d starting", progName, vmajor, vminor)
@@ -163,8 +173,10 @@ func (app *App) setupScene() {
 	//width, height := app.Window().Size()
 	//aspect := float32(width) / float32(height)
 	//camOrtho := camera.NewOrthographic(0, 640, 480, 0, 0.1, 100)
-	app.CameraOrtho().SetPosition(320, 240, 99)
-	app.CameraOrtho().LookAt(&math32.Vector3{320, 240, 0})
+	vx := app.sceneWidth / 2
+	vy := app.sceneHeight / 2
+	app.CameraOrtho().SetPosition(vx, vy, 99)
+	app.CameraOrtho().LookAt(&math32.Vector3{vx, vy, 0})
 	app.CameraOrtho().SetZoom(0.005)
 
 	// Default camera is perspective
