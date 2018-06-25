@@ -23,7 +23,6 @@ import (
 type App struct {
 	*application.Application                    // Embedded standard application object
 	log                      *logger.Logger     // Application logger
-	dirData                  string             // full path of data directory
 	labelFPS                 *gui.Label         // header FPS label
 	stats                    *stats.Stats       // statistics object
 	statsTable               *stats.StatsTable  // statistics table panel
@@ -116,10 +115,6 @@ func Create() *App {
 			app.log.Info("Set log level:%s for package:%s", level, pack)
 		}
 	}
-
-	// Check for data directory and aborts if not found
-	app.dirData = app.checkDirData("data")
-	app.log.Info("Using data directory:%s", app.dirData)
 
 	// Setup scene
 	app.setupScene()
@@ -231,12 +226,6 @@ func (app *App) GuiPanel() *gui.Panel {
 	return app.Panel3D().GetPanel()
 }
 
-// DirData returns the base directory for data
-func (app *App) DirData() string {
-
-	return app.dirData
-}
-
 // ControlFolder returns the application control folder
 func (app *App) ControlFolder() *gui.ControlFolder {
 
@@ -292,45 +281,6 @@ Draw calls/frame: %d
 		app.stats.Drawcalls,
 		app.stats.Cgocalls,
 	)
-}
-
-// checkDirData try to find and return the complete data directory path.
-// Aborts if not found
-func (app *App) checkDirData(dirDataName string) string {
-
-	// Checks first if data directory is in the current directory
-	if _, err := os.Stat(dirDataName); err == nil {
-		dirData, err := filepath.Abs(dirDataName)
-		if err != nil {
-			panic(err)
-		}
-		return dirData
-	}
-
-	// Get the executable path
-	execPath, err := osext.Executable()
-	if err != nil {
-		panic(err)
-	}
-
-	// Checks if data directory is in the executable directory
-	execDir := filepath.Dir(execPath)
-	path := filepath.Join(execDir, dirDataName)
-	if _, err := os.Stat(path); err == nil {
-		return path
-	}
-
-	// Assumes the executable is in $GOPATH/bin
-	goPath := filepath.Dir(execDir)
-	path = filepath.Join(goPath, "src", "github.com", "g3n", "g3nd", dirDataName)
-	// Checks data path
-	if _, err := os.Stat(path); err == nil {
-		return path
-	}
-
-	// Shows error message and aborts
-	app.log.Fatal("Data directory NOT FOUND")
-	return ""
 }
 
 // usage shows the application usage

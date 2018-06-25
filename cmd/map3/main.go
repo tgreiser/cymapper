@@ -98,7 +98,7 @@ func main() {
 	defer green.Close()
 
 	// read camera dimensions
-	if ok := webcam.Read(img); !ok {
+	if ok := webcam.Read(&img); !ok {
 		fmt.Printf("cannot read device %d\n", *deviceID)
 		return
 	}
@@ -130,7 +130,7 @@ func main() {
 		select {
 		case msg := <-c1:
 			fmt.Printf("msg: %v\n", msg)
-			if ok := webcam.Read(img); !ok {
+			if ok := webcam.Read(&img); !ok {
 				fmt.Printf("cannot read device %d\n", *deviceID)
 				return
 			}
@@ -183,7 +183,7 @@ func processFrame(window *gocv.Window, img, red, green, blue gocv.Mat) (*image.P
 	}
 	t := time.Now()
 
-	gocv.GaussianBlur(img, red, image.Point{X: *radius, Y: *radius}, 0, 0, gocv.BorderDefault)
+	gocv.GaussianBlur(img, &red, image.Point{X: *radius, Y: *radius}, 0, 0, gocv.BorderDefault)
 
 	// split into RGB
 	r := img.Rows()
@@ -215,9 +215,9 @@ func processFrame(window *gocv.Window, img, red, green, blue gocv.Mat) (*image.P
 		}
 	}
 
-	gocv.CvtColor(red, red, gocv.ColorRGBToGray)
-	gocv.CvtColor(green, green, gocv.ColorRGBToGray)
-	gocv.CvtColor(blue, blue, gocv.ColorRGBToGray)
+	gocv.CvtColor(red, &red, gocv.ColorRGBToGray)
+	gocv.CvtColor(green, &green, gocv.ColorRGBToGray)
+	gocv.CvtColor(blue, &blue, gocv.ColorRGBToGray)
 
 	// detect brightest point
 	_, _, _, rLoc := gocv.MinMaxLoc(red)
@@ -225,9 +225,9 @@ func processFrame(window *gocv.Window, img, red, green, blue gocv.Mat) (*image.P
 	_, _, _, bLoc := gocv.MinMaxLoc(blue)
 
 	// draw a rectangle around the bright spot
-	gocv.Rectangle(img, image.Rect(rLoc.X-6, rLoc.Y-6, rLoc.X+6, rLoc.Y+6), cr, 3)
-	gocv.Rectangle(img, image.Rect(gLoc.X-6, gLoc.Y-6, gLoc.X+6, gLoc.Y+6), cg, 3)
-	gocv.Rectangle(img, image.Rect(bLoc.X-6, bLoc.Y-6, bLoc.X+6, bLoc.Y+6), cb, 3)
+	gocv.Rectangle(&img, image.Rect(rLoc.X-6, rLoc.Y-6, rLoc.X+6, rLoc.Y+6), cr, 3)
+	gocv.Rectangle(&img, image.Rect(gLoc.X-6, gLoc.Y-6, gLoc.X+6, gLoc.Y+6), cg, 3)
+	gocv.Rectangle(&img, image.Rect(bLoc.X-6, bLoc.Y-6, bLoc.X+6, bLoc.Y+6), cb, 3)
 
 	// show the image in the window, and wait 1 millisecond
 	window.IMShow(img)

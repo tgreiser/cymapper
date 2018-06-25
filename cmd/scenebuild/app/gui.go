@@ -106,8 +106,8 @@ func (app *App) buildGui() {
 
 	cpanel.Add(fixtures)
 	fixtures.Subscribe(gui.OnChange, func(name string, ev interface{}) {
-		app.selected = fixtures.SelectedPos()
-		app.Log().Debug("Change fixture %v %v", fixtures.SelectedPos(), fixtures.Selected().Text())
+		//app.selected = fixtures.SelectedPos()
+		//app.Log().Debug("Change fixture %v %v", fixtures.SelectedPos(), fixtures.Selected().Text())
 		app.Draw()
 		app.SetCorners()
 	})
