@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -17,7 +16,6 @@ import (
 	"github.com/g3n/engine/util/logger"
 	"github.com/g3n/engine/util/stats"
 	"github.com/g3n/engine/window"
-	"github.com/kardianos/osext"
 )
 
 type App struct {
