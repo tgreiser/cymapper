@@ -33,10 +33,10 @@ type App struct {
 	selected                 int // selected fixture
 	width                    *gui.Edit
 	height                   *gui.Edit
-	tlx                      *gui.Edit
-	tly                      *gui.Edit
-	brx                      *gui.Edit
-	bry                      *gui.Edit
+	tlx                      *gui.Edit          // Top left x; x coordinate of top left corner of current fixture
+	tly                      *gui.Edit          // Top left y
+	brx                      *gui.Edit          // Bottom right x
+	bry                      *gui.Edit          // Bottom right y
 	sceneWidth               float32
 	sceneHeight              float32
 }
@@ -60,8 +60,8 @@ var (
 const (
 	progName = "Cyma Scene Builder"
 	execName = "cyscene"
-	vmajor   = 0
-	vminor   = 1
+	vmajor   = 0 // Major version number
+	vminor   = 1 // Minor version number
 )
 
 func Create() *App {
@@ -202,6 +202,11 @@ func (app *App) setupScene() {
 		app.OnWindowResize()
 	})
 
+	// Subscribe to mouse button down events
+	app.Window().Subscribe(window.OnMouseDown, func(evname string, ev interface{}) {
+		app.onMouse(ev)
+	})
+
 	// Because all windows events were cleared
 	// We need to inform the gui root panel to subscribe again.
 	app.Gui().SubscribeWin()
@@ -213,6 +218,16 @@ func (app *App) setupScene() {
 
 	// Remove all controls and adds default ones
 	app.control.Clear()
+}
+
+func (app *App) onMouse(ev interface{}) {
+	// Convert mouse coordinates to normalized device coordinates
+	mev := ev.(*window.MouseEvent)
+	width, height := app.Window().Size()
+	x := 2*(mev.Xpos/float32(width)) - 1
+	y := -2*(mev.Ypos/float32(height)) + 1
+    app.log.Info("Xpos: %f Ypos: %f", x, y)
+
 }
 
 // GuiPanel returns the current gui panel for demos to add elements to.
