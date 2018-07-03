@@ -166,17 +166,41 @@ func (app *App) setupScene() {
 	//width, height := app.Window().Size()
 	//aspect := float32(width) / float32(height)
 	//camOrtho := camera.NewOrthographic(0, 640, 480, 0, 0.1, 100)
-	vx := app.sceneWidth / 2
-	vy := app.sceneHeight / 2
-	app.CameraOrtho().SetPosition(vx, vy, 99)
-	app.CameraOrtho().LookAt(&math32.Vector3{vx, vy, 0})
-	app.CameraOrtho().SetZoom(0.005)
+
+
+	// vx := app.sceneWidth / 2
+	// vy := app.sceneHeight / 2
+	// app.CameraOrtho().SetPosition(vx, vy, 99)
+	// app.CameraOrtho().LookAt(&math32.Vector3{vx, vy, 0})
+	// app.CameraOrtho().SetZoom(0.005)
+
+	// // Default camera is perspective
+	// app.SetCamera(app.CameraOrtho())
+	// //app.SetOrbit(control.NewOrbitControl(camOrtho, app.Window()))
+	// // Adds camera to scene (important for audio demos)
+	// app.Scene().Add(app.CameraOrtho().GetCamera())
+
+
+    // NEW STUFF BELOW
+
+	centerX := app.sceneWidth / 2
+	centerY := app.sceneHeight / 2
+
+	// Sets perspective camera position
+	width, height := app.Window().Size()
+	aspect := float32(width) / float32(height)
+	app.CameraPersp().SetPosition(centerX, centerY, 1000)
+	app.CameraPersp().LookAt(&math32.Vector3{centerX, centerY, 0})
+	app.CameraPersp().SetAspect(aspect)
 
 	// Default camera is perspective
-	app.SetCamera(app.CameraOrtho())
-	//app.SetOrbit(control.NewOrbitControl(camOrtho, app.Window()))
+	app.SetCamera(app.CameraPersp())
 	// Adds camera to scene (important for audio demos)
-	app.Scene().Add(app.CameraOrtho().GetCamera())
+	app.Scene().Add(app.Camera().GetCamera())
+
+
+    // NEW STUFF ABOVE
+
 
 	// Subscribe to window key events
 	app.Window().Subscribe(window.OnKeyDown, func(evname string, ev interface{}) {
@@ -227,6 +251,14 @@ func (app *App) onMouse(ev interface{}) {
 	x := 2*(mev.Xpos/float32(width)) - 1
 	y := -2*(mev.Ypos/float32(height)) + 1
     app.log.Info("Xpos: %f Ypos: %f", x, y)
+
+	// // Set the raycaster from the current camera and mouse coordinates
+	// app.Camera().SetRaycaster(t.rc, x, y)
+	// //fmt.Printf("rc:%+v\n", t.rc.Ray)
+
+	// // Checks intersection with all objects in the scene
+	// intersects := t.rc.IntersectObjects(app.Scene().Children(), true)
+	// //fmt.Printf("intersects:%+v\n", intersects)
 
 }
 
