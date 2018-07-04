@@ -168,38 +168,35 @@ func (app *App) setupScene() {
 	//camOrtho := camera.NewOrthographic(0, 640, 480, 0, 0.1, 100)
 
 
-	// vx := app.sceneWidth / 2
-	// vy := app.sceneHeight / 2
-	// app.CameraOrtho().SetPosition(vx, vy, 99)
-	// app.CameraOrtho().LookAt(&math32.Vector3{vx, vy, 0})
-	// app.CameraOrtho().SetZoom(0.005)
-
-	// // Default camera is perspective
-	// app.SetCamera(app.CameraOrtho())
-	// //app.SetOrbit(control.NewOrbitControl(camOrtho, app.Window()))
-	// // Adds camera to scene (important for audio demos)
-	// app.Scene().Add(app.CameraOrtho().GetCamera())
-
-
-    // NEW STUFF BELOW
-
-	centerX := app.sceneWidth / 2
-	centerY := app.sceneHeight / 2
-
-	// Sets perspective camera position
-	width, height := app.Window().Size()
-	aspect := float32(width) / float32(height)
-	app.CameraPersp().SetPosition(centerX, centerY, 1000)
-	app.CameraPersp().LookAt(&math32.Vector3{centerX, centerY, 0})
-	app.CameraPersp().SetAspect(aspect)
+	vx := app.sceneWidth / 2
+	vy := app.sceneHeight / 2
+	app.CameraOrtho().SetPosition(vx, vy, 99)
+	app.CameraOrtho().LookAt(&math32.Vector3{vx, vy, 0})
+	app.CameraOrtho().SetZoom(0.005)
 
 	// Default camera is perspective
-	app.SetCamera(app.CameraPersp())
+	app.SetCamera(app.CameraOrtho())
+	//app.SetOrbit(control.NewOrbitControl(camOrtho, app.Window()))
 	// Adds camera to scene (important for audio demos)
-	app.Scene().Add(app.Camera().GetCamera())
+	app.Scene().Add(app.CameraOrtho().GetCamera())
 
 
-    // NEW STUFF ABOVE
+    // Setup for perspective camera
+
+	// centerX := app.sceneWidth / 2
+	// centerY := app.sceneHeight / 2
+
+	// // Sets perspective camera position
+	// width, height := app.Window().Size()
+	// aspect := float32(width) / float32(height)
+	// app.CameraPersp().SetPosition(centerX, centerY, 1000)
+	// app.CameraPersp().LookAt(&math32.Vector3{centerX, centerY, 0})
+	// app.CameraPersp().SetAspect(aspect)
+
+	// // Default camera is perspective
+	// app.SetCamera(app.CameraPersp())
+	// // Adds camera to scene (important for audio demos)
+	// app.Scene().Add(app.Camera().GetCamera())
 
 
 	// Subscribe to window key events
