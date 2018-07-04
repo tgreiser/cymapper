@@ -9,9 +9,13 @@ import (
 	"strconv"
 
 	"github.com/g3n/engine/math32"
+	"github.com/g3n/engine/core"
+    "github.com/tgreiser/cymapper/cmd/scenebuild/app"
 )
 
 type Fixture struct {
+	node      *core.Node        // Main node. It's what you add meshes and 
+                                // other nodes to. See the g3nd tank for an example
 	filepath  string            // File path
 	pts       []*math32.Vector3 // List of relative LED coordinates
 	tpts      []*math32.Vector3 // List of transformed coordinates
@@ -24,7 +28,7 @@ type Fixture struct {
 	scale     *math32.Vector3   // matrix multiply to scale points
 }
 
-func New(path string) *Fixture {
+func NewFixture(path string, app *App) {
 	f := new(Fixture)
 	f.filepath = path
 	tsv, err := os.Open(path)
@@ -54,6 +58,7 @@ func New(path string) *Fixture {
 	}
 	f.tl, f.br = f.FindCorners(f.pts)
 	f.ResetTransformation()
+    app.fixtures = append(app.fixtures, f)
 	return f
 }
 

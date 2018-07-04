@@ -297,9 +297,8 @@ func (app *App) buildGui() {
 		}
 		app.log.Info("Selected file: %v", fpath)
 		// parse relative vectors for fixture
-		fixture := fixture.New(fpath)
-		app.fixtures = append(app.fixtures, fixture)
-		app.DrawFixtures()
+		fixture.NewFixture(fpath, app)
+        app.DrawFixtures()
 		app.fs.Show(false)
 
 		fixtures.Add(gui.NewImageLabel(filepath.Base(fpath)))
@@ -379,6 +378,7 @@ func (app *App) DrawBounds() {
 	app.Scene().Add(box)
 }
 
+// Will be unneccessary when NewFixture is complete
 func (app *App) DrawFixtures() {
 	mat := material.NewStandard(math32.NewColor("White"))
 	mat.SetSide(material.SideDouble)
