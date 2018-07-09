@@ -13,6 +13,7 @@ import (
 	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/window"
 	"github.com/tgreiser/cymapper/cmd/scenebuild/fixture"
+    "github.com/gerow/go-color"
 )
 
 var darkTextColor = &math32.Color{.4, .4, .4}
@@ -107,7 +108,7 @@ func (app *App) buildGui() {
 
 	cpanel.Add(fixtures)
 	fixtures.Subscribe(gui.OnChange, func(name string, ev interface{}) {
-		//app.selected = fixtures.SelectedPos()
+		app.selected = fixtures.SelectedPos()
 		//app.Log().Debug("Change fixture %v %v", fixtures.SelectedPos(), fixtures.Selected().Text())
 		app.Draw()
 		app.SetCorners()
@@ -384,37 +385,49 @@ func (app *App) DrawBounds() {
 	app.Scene().Add(box)
 }
 
-// Will be unneccessary when NewFixture is complete
-func (app *App) DrawFixtures() {
-	mat := material.NewStandard(math32.NewColor("White"))
+func (app *App) NewRainbowMaterial(hue float64) *material.Standard {
+    hslColor := color.HSL{hue, 1.0, 0.5}
+    goColorRGB := hslColor.ToRGB()
+    g3nRGB := &math32.Color{float32(goColorRGB.R),
+                           float32(goColorRGB.G),
+                           float32(goColorRGB.B),
+    }
+
+	mat := material.NewStandard(g3nRGB)
 	mat.SetSide(material.SideDouble)
 	mat.SetWireframe(false)
+    return mat
+}
+
+func (app *App) DrawFixtures() {
 
 	rmat := material.NewStandard(math32.NewColor("red"))
 	rmat.SetSide(material.SideFront)
 	rmat.SetWireframe(true)
 	rmat.SetLineWidth(1)
 
-	l := len(app.fixtures)
-	for iX := 0; iX < l; iX++ {
+    for iX, fixture := range app.fixtures {
 		// add fixture vectors to scene
-		app.fixtures[iX].Reset()
-		for app.fixtures[iX].Available() {
+		fixture.Reset()
+
+        for j := 0; fixture.Available(); j++ {
 			geom := geometry.NewCircle(3, 16)
+            mat := app.NewRainbowMaterial(float64(j) / float64(fixture.Length()) * 0.67)
 			circle := graphic.NewMesh(geom, mat)
-			circle.SetPositionVec(app.fixtures[iX].Next())
+			circle.SetPositionVec(fixture.Next())
 			app.Scene().Add(circle)
 			//app.Log().Debug("%v", circle.Position())
 		}
 		if iX == app.selected {
 			circle := graphic.NewMesh(geometry.NewCircle(6, 16), rmat)
-			circle.SetPositionVec(app.fixtures[iX].TransformedTopLeft())
+			circle.SetPositionVec(fixture.TransformedTopLeft())
 			app.Scene().Add(circle)
 			circle = graphic.NewMesh(geometry.NewCircle(6, 16), rmat)
-			circle.SetPositionVec(app.fixtures[iX].TransformedBottomRight())
+			circle.SetPositionVec(fixture.TransformedBottomRight())
 			app.Scene().Add(circle)
 		}
-	}
+    }
+
 	err := app.Renderer().AddDefaultShaders()
 	if err != nil {
 		panic(err)

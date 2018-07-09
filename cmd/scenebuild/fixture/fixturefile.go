@@ -86,6 +86,10 @@ func (f *Fixture) Available() bool {
 	return f.idx < len(f.tpts)
 }
 
+func (f *Fixture) Length() int {
+    return len(f.tpts)
+}
+
 func (f *Fixture) Next() *math32.Vector3 {
 	defer func() { f.idx++ }()
 	return f.tpts[f.idx]
