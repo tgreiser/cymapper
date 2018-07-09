@@ -9,7 +9,6 @@ import (
 	"strconv"
 
 	"github.com/g3n/engine/math32"
-	"github.com/g3n/engine/core"
 )
 
 type Fixture struct {

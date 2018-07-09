@@ -78,14 +78,15 @@ func (app *App) buildGui() {
 		header.Add(app.labelFPS)
 	}
 
-	zoom := gui.NewHSlider(100, 30)
-	zoom.SetPosition(420, 0)
-	zoom.SetText("Zoom")
-	zoom.Subscribe(gui.OnChange, func(name string, ev interface{}) {
-		app.CameraOrtho().SetZoom(zoom.Value() / 100)
+	app.zoom = gui.NewHSlider(100, 30)
+	app.zoom.SetPosition(420, 0)
+	app.zoom.SetText("Zoom")
+    app.zoom.SetValue(0.3)
+	app.zoom.Subscribe(gui.OnChange, func(name string, ev interface{}) {
+		app.CameraOrtho().SetZoom(app.zoom.Value() / 100)
 		app.SetCamera(app.CameraOrtho())
 	})
-	header.Add(zoom)
+	header.Add(app.zoom)
 
 	// Adds control panel after the header
 	cpanel := gui.NewPanel(600, 80)

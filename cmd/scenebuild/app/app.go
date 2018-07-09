@@ -39,6 +39,7 @@ type App struct {
 	bry                      *gui.Edit          // Bottom right y
 	sceneWidth               float32
 	sceneHeight              float32
+    zoom                     *gui.Slider
 }
 
 type IScreen interface {
@@ -172,7 +173,9 @@ func (app *App) setupScene() {
 	vy := app.sceneHeight / 2
 	app.CameraOrtho().SetPosition(vx, vy, 99)
 	app.CameraOrtho().LookAt(&math32.Vector3{vx, vy, 0})
-	app.CameraOrtho().SetZoom(0.005)
+    if app.zoom != nil {
+        app.CameraOrtho().SetZoom(app.zoom.Value() / 100)
+    }
 
 	// Default camera is perspective
 	app.SetCamera(app.CameraOrtho())
