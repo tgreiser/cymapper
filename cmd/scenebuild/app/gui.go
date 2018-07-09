@@ -297,7 +297,7 @@ func (app *App) buildGui() {
 		}
 		app.log.Info("Selected file: %v", fpath)
 		// parse relative vectors for fixture
-		fixture.NewFixture(fpath, app)
+		app.newFixture(fpath)
         app.DrawFixtures()
 		app.fs.Show(false)
 
@@ -318,6 +318,11 @@ func (app *App) buildGui() {
 		panic(err)
 	}
 	app.Renderer().SetScene(app.Scene())
+}
+
+func (app *App) newFixture(filePath string) {
+    newFixture := fixture.NewFixture(filePath)
+    app.fixtures = append(app.fixtures, newFixture)
 }
 
 func (app *App) SetCorners() {
