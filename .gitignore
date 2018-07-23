@@ -16,6 +16,7 @@
 #vim swap files
 *.swp
 *.swo
+*.swn
 
 #Fixture files
 *.tsv

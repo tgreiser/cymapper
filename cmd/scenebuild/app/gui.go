@@ -90,7 +90,7 @@ func (app *App) buildGui() {
 	header.Add(app.zoom)
 
 	// Adds control panel after the header
-	cpanel := gui.NewPanel(600, 80)
+	cpanel := gui.NewPanel(600, 120)
 	cpanel.SetBorders(0, 0, 1, 0)
 	cpanel.SetPaddings(4, 4, 4, 4)
 	cpanel.SetColor(math32.NewColorHex(0xffca6e))
@@ -258,6 +258,17 @@ func (app *App) buildGui() {
 	app.brx.Subscribe(gui.OnChange, xform)
 	app.bry.Subscribe(gui.OnChange, xform)
 
+	bFlipX := gui.NewButton("Flip X")
+	bFlipX.SetPosition(462, 80)
+	bFlipX.SetWidth(60)
+	bFlipX.Subscribe(gui.OnClick, func(name string, ev interface{}) {
+        app.flipX()
+        app.tly.Dispatch(gui.OnChange, nil)
+        app.bry.Dispatch(gui.OnChange, nil)
+        app.Draw()
+	})
+	cpanel.Add(bFlipX)
+
 	// Save Scene - File Select
 	ss, err := NewFileSelect(400, 300)
 	if err != nil {
@@ -320,6 +331,13 @@ func (app *App) buildGui() {
 		panic(err)
 	}
 	app.Renderer().SetScene(app.Scene())
+}
+
+func (app *App) flipX() {
+    topLeftY := app.tly.Text()
+    bottomRightY := app.bry.Text()
+    app.tly.SetText(bottomRightY)
+    app.bry.SetText(topLeftY)
 }
 
 func (app *App) newFixture(filePath string) {
