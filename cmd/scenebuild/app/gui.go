@@ -251,12 +251,20 @@ func (app *App) buildGui() {
 	app.bry.Subscribe(gui.OnChange, xform)
 
 	bFlipX := gui.NewButton("Flip X")
-	bFlipX.SetPosition(462, 80)
+	bFlipX.SetPosition(454, 80)
 	bFlipX.SetWidth(60)
 	bFlipX.Subscribe(gui.OnClick, func(name string, ev interface{}) {
-        app.flipX()
+        app.flip("X")
 	})
 	cpanel.Add(bFlipX)
+
+	bFlipY := gui.NewButton("Flip Y")
+	bFlipY.SetPosition(522, 80)
+	bFlipY.SetWidth(60)
+	bFlipY.Subscribe(gui.OnClick, func(name string, ev interface{}) {
+        app.flip("Y")
+	})
+	cpanel.Add(bFlipY)
 
 	// Save Scene - File Select
 	ss, err := NewFileSelect(400, 300)
@@ -334,7 +342,7 @@ func (app *App) transformFixtureTo(fixt *fixture.Fixture, ntlx, ntly, nbrx, nbry
     app.Draw()
 }
 
-func (app *App) flipX() {
+func (app *App) flip(direction string) {
     topLeftX, err := strconv.ParseFloat(app.tlx.Text(), 32)
     if err != nil {
         app.Log().Error("Invalid top left coordinates %v\n", app.tlx.Text())
@@ -353,8 +361,13 @@ func (app *App) flipX() {
     }
 
     currentFixture := app.CurrentFixture()
-    // Swap Y values of current fixture.
-    app.transformFixtureTo(currentFixture, topLeftX, bottomRightY, bottomRightX, topLeftY)
+    if direction == "X" {
+        // Swap Y values of current fixture.
+        app.transformFixtureTo(currentFixture, topLeftX, bottomRightY, bottomRightX, topLeftY)
+    } else if direction == "Y" {
+        // Swap X values of current fixture.
+        app.transformFixtureTo(currentFixture, bottomRightX, topLeftY, topLeftX,  bottomRightY)
+    }
 
     currentFixture.UpdatePoints()
     // currentFixture.tl, currentFixture.br = currentFixture.FindCorners(currentFixture.pts)
