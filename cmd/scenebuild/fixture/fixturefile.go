@@ -115,6 +115,10 @@ func (f Fixture) TransformedBottomRight() *math32.Vector3 {
 	return f.tbr
 }
 
+func (f *Fixture) UpdatePoints() {
+    f.pts = f.tpts
+}
+
 func (f *Fixture) Transformed() []*math32.Vector3 {
 	f.tpts = make([]*math32.Vector3, len(f.pts), len(f.pts))
 	for iP, p := range f.pts {

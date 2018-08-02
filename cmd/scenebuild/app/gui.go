@@ -356,6 +356,7 @@ func (app *App) flipX() {
     // Swap Y values of current fixture.
     app.transformFixtureTo(currentFixture, topLeftX, bottomRightY, bottomRightX, topLeftY)
 
+    currentFixture.UpdatePoints()
     // currentFixture.tl, currentFixture.br = currentFixture.FindCorners(currentFixture.pts)
 
     // app.tly.SetText(bottomRightY)
