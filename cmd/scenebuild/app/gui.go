@@ -243,15 +243,7 @@ func (app *App) buildGui() {
 			app.Log().Error("Invalid bottom right coordinates %v\n", app.bry.Text())
 		}
 
-		newTL := math32.NewVector3(float32(ntlx), float32(ntly), 0)
-		newBR := math32.NewVector3(float32(nbrx), float32(nbry), 0)
-		sc, tr := fixture.NewTransformation(app.fixtures[app.selected].TopLeft(),
-			app.fixtures[app.selected].BottomRight(), newTL, newBR)
-		app.fixtures[app.selected].Transform(sc, tr)
-		app.Log().Debug("selected %v x %v\n", app.fixtures[app.selected].TopLeft(), app.fixtures[app.selected].BottomRight())
-		app.Log().Debug("SC %v x %v TR %v x %v\n", sc.X, sc.Y, tr.X, tr.Y)
-
-		app.Draw()
+        app.transformFixtureTo(app.CurrentFixture(), ntlx, ntly, nbrx, nbry)
 	}
 	app.tlx.Subscribe(gui.OnChange, xform)
 	app.tly.Subscribe(gui.OnChange, xform)
@@ -263,9 +255,6 @@ func (app *App) buildGui() {
 	bFlipX.SetWidth(60)
 	bFlipX.Subscribe(gui.OnClick, func(name string, ev interface{}) {
         app.flipX()
-        app.tly.Dispatch(gui.OnChange, nil)
-        app.bry.Dispatch(gui.OnChange, nil)
-        app.Draw()
 	})
 	cpanel.Add(bFlipX)
 
@@ -333,11 +322,47 @@ func (app *App) buildGui() {
 	app.Renderer().SetScene(app.Scene())
 }
 
+func (app *App) transformFixtureTo(fixt *fixture.Fixture, ntlx, ntly, nbrx, nbry float64) {
+    newTL := math32.NewVector3(float32(ntlx), float32(ntly), 0)
+    newBR := math32.NewVector3(float32(nbrx), float32(nbry), 0)
+    sc, tr := fixture.NewTransformation(fixt.TopLeft(),
+        fixt.BottomRight(), newTL, newBR)
+    fixt.Transform(sc, tr)
+    app.Log().Debug("selected %v x %v\n", fixt.TopLeft(), fixt.BottomRight())
+    app.Log().Debug("SC %v x %v TR %v x %v\n", sc.X, sc.Y, tr.X, tr.Y)
+
+    app.Draw()
+}
+
 func (app *App) flipX() {
-    topLeftY := app.tly.Text()
-    bottomRightY := app.bry.Text()
-    app.tly.SetText(bottomRightY)
-    app.bry.SetText(topLeftY)
+    topLeftX, err := strconv.ParseFloat(app.tlx.Text(), 32)
+    if err != nil {
+        app.Log().Error("Invalid top left coordinates %v\n", app.tlx.Text())
+    }
+    topLeftY, err := strconv.ParseFloat(app.tly.Text(), 32)
+    if err != nil {
+        app.Log().Error("Invalid top left coordinates %v\n", app.tlx.Text())
+    }
+    bottomRightX, err := strconv.ParseFloat(app.brx.Text(), 32)
+    if err != nil {
+        app.Log().Error("Invalid bottom right coordinates %v\n", app.brx.Text())
+    }
+    bottomRightY, err := strconv.ParseFloat(app.bry.Text(), 32)
+    if err != nil {
+        app.Log().Error("Invalid bottom right coordinates %v\n", app.brx.Text())
+    }
+
+    currentFixture := app.CurrentFixture()
+    // Swap Y values of current fixture.
+    app.transformFixtureTo(currentFixture, topLeftX, bottomRightY, bottomRightX, topLeftY)
+
+    // currentFixture.tl, currentFixture.br = currentFixture.FindCorners(currentFixture.pts)
+
+    // app.tly.SetText(bottomRightY)
+    // app.bry.SetText(topLeftY)
+    // app.tly.Dispatch(gui.OnChange, nil)
+    // app.bry.Dispatch(gui.OnChange, nil)
+    app.Draw()
 }
 
 func (app *App) newFixture(filePath string) {

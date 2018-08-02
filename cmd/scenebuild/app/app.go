@@ -246,11 +246,11 @@ func (app *App) setupScene() {
 
 func (app *App) onMouse(ev interface{}) {
 	// Convert mouse coordinates to normalized device coordinates
-	mev := ev.(*window.MouseEvent)
-	width, height := app.Window().Size()
-	x := 2*(mev.Xpos/float32(width)) - 1
-	y := -2*(mev.Ypos/float32(height)) + 1
-    app.log.Info("Xpos: %f Ypos: %f", x, y)
+	// mev := ev.(*window.MouseEvent)
+	// width, height := app.Window().Size()
+	// x := 2*(mev.Xpos/float32(width)) - 1
+	// y := -2*(mev.Ypos/float32(height)) + 1
+    // app.log.Info("Xpos: %f Ypos: %f", x, y)
 
 	// // Set the raycaster from the current camera and mouse coordinates
 	// app.Camera().SetRaycaster(t.rc, x, y)
@@ -281,6 +281,10 @@ func (app *App) ControlFolder() *gui.ControlFolder {
 func (app *App) AmbLight() *light.Ambient {
 
 	return app.ambLight
+}
+
+func (app *App) CurrentFixture() *fixture.Fixture {
+    return app.fixtures[app.selected]
 }
 
 // UpdateFPS updates the fps value in the window title or header label
