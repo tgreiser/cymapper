@@ -366,6 +366,9 @@ func (app *App) flip(direction string) {
         app.Log().Error("Invalid bottom right coordinates %v\n", app.brx.Text())
     }
 
+    if app.selected < 0 {
+        return
+    }
     currentFixture := app.CurrentFixture()
     if direction == "X" {
         // Swap Y values of current fixture.
