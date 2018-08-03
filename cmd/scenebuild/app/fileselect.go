@@ -156,18 +156,8 @@ func (fs *FileSelect) SetPath(path string) error {
 }
 
 func (fs *FileSelect) Selected() string {
-
-	selist := fs.list.Selected()
-	if len(selist) == 0 {
-		fn := fs.filename.Text()
-		if len(fn) > 1 {
-			return filepath.Join(fs.path.Text(), fn)
-		}
-		return ""
-	}
-	label := selist[0].(*gui.ImageLabel)
-	text := label.Text()
-	return filepath.Join(fs.path.Text(), text)
+    fileNameLowerBox := fs.filename.Text()
+    return filepath.Join(fs.path.Text(), fileNameLowerBox)
 }
 
 func (fs *FileSelect) onSelect() {
