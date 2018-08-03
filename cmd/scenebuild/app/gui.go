@@ -102,17 +102,7 @@ func (app *App) buildGui() {
 	l2.SetColor(darkTextColor)
 	cpanel.Add(l2)
 
-	fixtures := gui.NewDropDown(200, gui.NewImageLabel(""))
-	fixtures.SetHeight(26)
-	fixtures.SetPosition(162, 22)
-
-	cpanel.Add(fixtures)
-	fixtures.Subscribe(gui.OnChange, func(name string, ev interface{}) {
-		app.selected = fixtures.SelectedPos()
-		//app.Log().Debug("Change fixture %v %v", fixtures.SelectedPos(), fixtures.Selected().Text())
-		app.Draw()
-		app.SetCorners()
-	})
+	fixtures := app.newFixturesDropDown(cpanel)
 
 	bAddFixture := gui.NewButton("Add Fixture")
 	bAddFixture.SetPosition(4, 22)
@@ -204,13 +194,14 @@ func (app *App) buildGui() {
 	bReset.Subscribe(gui.OnClick, func(name string, ev interface{}) {
 		app.Scene().RemoveAll(true)
 		app.setupScene()
-		// TODO - make fixtures reset correctly
-		// currently it disappears
 		fixtures.SelectPos(-1)
-		fixtures.RemoveAll(true)
+
+        // Removes and then creates new fixture panel because it's a pain to modify
+        cpanel.Remove(fixtures)
+        fixtures = app.newFixturesDropDown(cpanel)
 
 		app.selected = -1
-		app.fixtures = app.fixtures[:0]
+		app.fixtures = nil
 
 		app.tlx.SetText("")
 		app.tly.SetText("")
@@ -330,6 +321,21 @@ func (app *App) buildGui() {
 	app.Renderer().SetScene(app.Scene())
 }
 
+func (app *App) newFixturesDropDown(cpanel *gui.Panel) *gui.DropDown {
+    fixtures := gui.NewDropDown(200, gui.NewImageLabel(""))
+    fixtures.SetHeight(26)
+    fixtures.SetPosition(162, 22)
+
+    cpanel.Add(fixtures)
+    fixtures.Subscribe(gui.OnChange, func(name string, ev interface{}) {
+        app.selected = fixtures.SelectedPos()
+        //app.Log().Debug("Change fixture %v %v", fixtures.SelectedPos(), fixtures.Selected().Text())
+        app.Draw()
+        app.SetCorners()
+    })
+    return fixtures
+}
+
 func (app *App) transformFixtureTo(fixt *fixture.Fixture, ntlx, ntly, nbrx, nbry float64) {
     newTL := math32.NewVector3(float32(ntlx), float32(ntly), 0)
     newBR := math32.NewVector3(float32(nbrx), float32(nbry), 0)
@@ -367,6 +373,8 @@ func (app *App) flip(direction string) {
     } else if direction == "Y" {
         // Swap X values of current fixture.
         app.transformFixtureTo(currentFixture, bottomRightX, topLeftY, topLeftX,  bottomRightY)
+    } else {
+        return
     }
 
     currentFixture.UpdatePoints()
