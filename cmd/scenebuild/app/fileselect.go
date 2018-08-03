@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+    "errors"
 
 	"github.com/g3n/engine/gui"
 	"github.com/g3n/engine/gui/assets/icon"
@@ -155,9 +156,12 @@ func (fs *FileSelect) SetPath(path string) error {
 	return nil
 }
 
-func (fs *FileSelect) Selected() string {
+func (fs *FileSelect) Selected() (string, error) {
     fileNameLowerBox := fs.filename.Text()
-    return filepath.Join(fs.path.Text(), fileNameLowerBox)
+    if len(fileNameLowerBox) == 0 {
+        return "", errors.New("file not selected")
+    }
+    return filepath.Join(fs.path.Text(), fileNameLowerBox), nil
 }
 
 func (fs *FileSelect) onSelect() {

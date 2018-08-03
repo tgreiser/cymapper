@@ -266,9 +266,11 @@ func (app *App) buildGui() {
 	app.sceneFS.SetVisible(false)
 	app.sceneFS.SetTitle("Save Scene")
 	app.sceneFS.Subscribe("OnOK", func(evname string, ev interface{}) {
-		fpath := app.sceneFS.Selected()
-		if fpath == "" {
-			app.ed.Show("Please enter a path for your scene")
+		fpath, err := app.sceneFS.Selected()
+		if err != nil {
+            if err.Error() == "file not selected" {
+                app.ed.Show("File not selected")
+            }
 			return
 		}
 		app.log.Info("Selected file: %v", fpath)
@@ -291,9 +293,11 @@ func (app *App) buildGui() {
 	app.fs.SetVisible(false)
 	app.fs.SetTitle("Add Fixture")
 	app.fs.Subscribe("OnOK", func(evname string, ev interface{}) {
-		fpath := app.fs.Selected()
-		if fpath == "" {
-			app.ed.Show("File not selected")
+		fpath, err := app.fs.Selected()
+		if err != nil {
+            if err.Error() == "file not selected" {
+                app.ed.Show("File not selected")
+            }
 			return
 		}
 		app.log.Info("Selected file: %v", fpath)
@@ -311,6 +315,9 @@ func (app *App) buildGui() {
 		app.fs.Show(false)
 	})
 	app.Gui().Add(app.fs)
+
+    app.ed = NewErrorDialog(600, 100)
+    app.Gui().Add(app.ed)
 
 	app.Gui().Add(cpanel)
 
