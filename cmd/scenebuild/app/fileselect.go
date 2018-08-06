@@ -22,7 +22,8 @@ type FileSelect struct {
 	bcan     *gui.Button
 }
 
-func NewFileSelect(width, height float32) (*FileSelect, error) {
+func NewFileSelect(width, height float32, relativeStartingPath string) (*FileSelect, error) {
+    //Use empty string to open startingPath in current directory
 
 	fs := new(FileSelect)
 	fs.Panel.Initialize(width, height)
@@ -84,12 +85,15 @@ func NewFileSelect(width, height float32) (*FileSelect, error) {
 	bc.Add(fs.bcan)
 
 	// Sets initial directory
-	path, err := os.Getwd()
-	if err != nil {
+    path, err := os.Getwd()
+    if err != nil {
 		return nil, err
-	} else {
-		fs.SetPath(path)
 	}
+    if relativeStartingPath != "" {
+        path = filepath.Join(path, relativeStartingPath)
+    }
+    fs.SetPath(path)
+
 	return fs, nil
 }
 

@@ -258,7 +258,7 @@ func (app *App) buildGui() {
 	cpanel.Add(bFlipY)
 
 	// Save Scene - File Select
-	ss, err := NewFileSelect(400, 300)
+	ss, err := NewFileSelect(400, 300, "../../fixtures")
 	if err != nil {
 		panic(err)
 	}
@@ -285,7 +285,7 @@ func (app *App) buildGui() {
 	app.Gui().Add(app.sceneFS)
 
 	// Add Fixture - File Select
-	fs, err := NewFileSelect(400, 300)
+	fs, err := NewFileSelect(400, 300, "../../fixtures")
 	if err != nil {
 		panic(err)
 	}
