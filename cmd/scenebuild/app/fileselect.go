@@ -98,6 +98,7 @@ func (fs *FileSelect) Show(show bool) {
 
 	if show {
 		fs.SetVisible(true)
+        fs.SetPath(fs.path.Text())
 		parent := fs.Parent().(gui.IPanel).GetPanel()
 		px := (parent.Width() - fs.Width()) / 2
 		py := (parent.Height() - fs.Height()) / 2
