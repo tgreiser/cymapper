@@ -453,8 +453,8 @@ func (app *App) DrawBounds() {
 		1, 1, 1,
 		1, 1, 1,
 	)
-	geom2.AddVBO(gls.NewVBO().AddAttrib("VertexPosition", 3).SetBuffer(vertices))
-	geom2.AddVBO(gls.NewVBO().AddAttrib("VertexColor", 3).SetBuffer(colors))
+	geom2.AddVBO(gls.NewVBO(vertices).AddAttrib(gls.VertexPosition))
+	geom2.AddVBO(gls.NewVBO(colors).AddAttrib(gls.VertexColor))
 
 	box := graphic.NewLines(geom2, mat)
 	app.Scene().Add(box)
