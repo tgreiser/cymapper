@@ -308,8 +308,10 @@ func (app *App) buildGui() {
 
 		fixtures.Add(gui.NewImageLabel(filepath.Base(fpath)))
 		fixtures.SelectPos(fixtures.Len() - 1)
+        app.selected = fixtures.Len() - 1
 
 		app.SetCorners()
+        app.Draw()
 	})
 	app.fs.Subscribe("OnCancel", func(evname string, ev interface{}) {
 		app.fs.Show(false)
