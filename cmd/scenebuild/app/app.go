@@ -85,6 +85,7 @@ func Create() *App {
 	app := new(App)
 	app.sceneWidth = 1280
 	app.sceneHeight = 720
+    app.selected = -1
 	app.Application = a
 	app.log = app.Log()
 	app.log.Info("%s v%d.%d starting", progName, vmajor, vminor)

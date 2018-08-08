@@ -305,8 +305,8 @@ func (app *App) buildGui() {
 		app.newFixture(fpath)
         app.DrawFixtures()
 		app.fs.Show(false)
-
-		fixtures.Add(gui.NewImageLabel(filepath.Base(fpath)))
+        newFixture := gui.NewImageLabel(filepath.Base(fpath))
+		fixtures.Add(newFixture)
 		fixtures.SelectPos(fixtures.Len() - 1)
         app.selected = fixtures.Len() - 1
 
@@ -334,6 +334,7 @@ func (app *App) newFixturesDropDown(cpanel *gui.Panel) *gui.DropDown {
     fixtures := gui.NewDropDown(200, gui.NewImageLabel(""))
     fixtures.SetHeight(26)
     fixtures.SetPosition(162, 22)
+    fixtures.SelectPos(-1)
 
     cpanel.Add(fixtures)
     fixtures.Subscribe(gui.OnChange, func(name string, ev interface{}) {
@@ -405,11 +406,13 @@ func (app *App) newFixture(filePath string) {
 }
 
 func (app *App) SetCorners() {
-	fixture := app.fixtures[app.selected]
-	app.tlx.SetText(FormatFloat32(fixture.TransformedTopLeft().X))
-	app.tly.SetText(FormatFloat32(fixture.TransformedTopLeft().Y))
-	app.brx.SetText(FormatFloat32(fixture.TransformedBottomRight().X))
-	app.bry.SetText(FormatFloat32(fixture.TransformedBottomRight().Y))
+    if app.selected >= 0 {
+        fixture := app.fixtures[app.selected]
+        app.tlx.SetText(FormatFloat32(fixture.TransformedTopLeft().X))
+        app.tly.SetText(FormatFloat32(fixture.TransformedTopLeft().Y))
+        app.brx.SetText(FormatFloat32(fixture.TransformedBottomRight().X))
+        app.bry.SetText(FormatFloat32(fixture.TransformedBottomRight().Y))
+    }
 }
 
 func (app *App) Draw() {
