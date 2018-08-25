@@ -1,6 +1,7 @@
 package app
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"sort"
@@ -21,7 +22,8 @@ type FileSelect struct {
 	bcan     *gui.Button
 }
 
-func NewFileSelect(width, height float32) (*FileSelect, error) {
+func NewFileSelect(width, height float32, relativeStartingPath string) (*FileSelect, error) {
+	//Use empty string to open startingPath in current directory
 
 	fs := new(FileSelect)
 	fs.Panel.Initialize(width, height)
@@ -86,9 +88,12 @@ func NewFileSelect(width, height float32) (*FileSelect, error) {
 	path, err := os.Getwd()
 	if err != nil {
 		return nil, err
-	} else {
-		fs.SetPath(path)
 	}
+	if relativeStartingPath != "" {
+		path = filepath.Join(path, relativeStartingPath)
+	}
+	fs.SetPath(path)
+
 	return fs, nil
 }
 
@@ -97,6 +102,7 @@ func (fs *FileSelect) Show(show bool) {
 
 	if show {
 		fs.SetVisible(true)
+		fs.SetPath(fs.path.Text())
 		parent := fs.Parent().(gui.IPanel).GetPanel()
 		px := (parent.Width() - fs.Width()) / 2
 		py := (parent.Height() - fs.Height()) / 2
@@ -155,19 +161,12 @@ func (fs *FileSelect) SetPath(path string) error {
 	return nil
 }
 
-func (fs *FileSelect) Selected() string {
-
-	selist := fs.list.Selected()
-	if len(selist) == 0 {
-		fn := fs.filename.Text()
-		if len(fn) > 1 {
-			return filepath.Join(fs.path.Text(), fn)
-		}
-		return ""
+func (fs *FileSelect) Selected() (string, error) {
+	fileNameLowerBox := fs.filename.Text()
+	if len(fileNameLowerBox) == 0 {
+		return "", errors.New("file not selected")
 	}
-	label := selist[0].(*gui.ImageLabel)
-	text := label.Text()
-	return filepath.Join(fs.path.Text(), text)
+	return filepath.Join(fs.path.Text(), fileNameLowerBox), nil
 }
 
 func (fs *FileSelect) onSelect() {

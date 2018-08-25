@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -17,13 +16,11 @@ import (
 	"github.com/g3n/engine/util/logger"
 	"github.com/g3n/engine/util/stats"
 	"github.com/g3n/engine/window"
-	"github.com/kardianos/osext"
 )
 
 type App struct {
 	*application.Application                    // Embedded standard application object
 	log                      *logger.Logger     // Application logger
-	dirData                  string             // full path of data directory
 	labelFPS                 *gui.Label         // header FPS label
 	stats                    *stats.Stats       // statistics object
 	statsTable               *stats.StatsTable  // statistics table panel
@@ -34,6 +31,15 @@ type App struct {
 	ambLight                 *light.Ambient
 	fixtures                 []*fixture.Fixture
 	selected                 int // selected fixture
+	width                    *gui.Edit
+	height                   *gui.Edit
+	tlx                      *gui.Edit // Top left x; x coordinate of top left corner of current fixture
+	tly                      *gui.Edit // Top left y
+	brx                      *gui.Edit // Bottom right x
+	bry                      *gui.Edit // Bottom right y
+	sceneWidth               float32
+	sceneHeight              float32
+	zoom                     *gui.Slider
 }
 
 type IScreen interface {
@@ -55,8 +61,8 @@ var (
 const (
 	progName = "Cyma Scene Builder"
 	execName = "cyscene"
-	vmajor   = 0
-	vminor   = 1
+	vmajor   = 0 // Major version number
+	vminor   = 1 // Minor version number
 )
 
 func Create() *App {
@@ -77,6 +83,9 @@ func Create() *App {
 		panic(err)
 	}
 	app := new(App)
+	app.sceneWidth = 1280
+	app.sceneHeight = 720
+	app.selected = -1
 	app.Application = a
 	app.log = app.Log()
 	app.log.Info("%s v%d.%d starting", progName, vmajor, vminor)
@@ -106,10 +115,6 @@ func Create() *App {
 			app.log.Info("Set log level:%s for package:%s", level, pack)
 		}
 	}
-
-	// Check for data directory and aborts if not found
-	app.dirData = app.checkDirData("data")
-	app.log.Info("Using data directory:%s", app.dirData)
 
 	// Setup scene
 	app.setupScene()
@@ -163,15 +168,37 @@ func (app *App) setupScene() {
 	//width, height := app.Window().Size()
 	//aspect := float32(width) / float32(height)
 	//camOrtho := camera.NewOrthographic(0, 640, 480, 0, 0.1, 100)
-	app.CameraOrtho().SetPosition(320, 240, 99)
-	app.CameraOrtho().LookAt(&math32.Vector3{320, 240, 0})
-	app.CameraOrtho().SetZoom(0.005)
+
+	vx := app.sceneWidth / 2
+	vy := app.sceneHeight / 2
+	app.CameraOrtho().SetPosition(vx, vy, 99)
+	app.CameraOrtho().LookAt(&math32.Vector3{vx, vy, 0})
+	if app.zoom != nil {
+		app.CameraOrtho().SetZoom(app.zoom.Value() / 100)
+	}
 
 	// Default camera is perspective
 	app.SetCamera(app.CameraOrtho())
 	//app.SetOrbit(control.NewOrbitControl(camOrtho, app.Window()))
 	// Adds camera to scene (important for audio demos)
 	app.Scene().Add(app.CameraOrtho().GetCamera())
+
+	// Setup for perspective camera
+
+	// centerX := app.sceneWidth / 2
+	// centerY := app.sceneHeight / 2
+
+	// // Sets perspective camera position
+	// width, height := app.Window().Size()
+	// aspect := float32(width) / float32(height)
+	// app.CameraPersp().SetPosition(centerX, centerY, 1000)
+	// app.CameraPersp().LookAt(&math32.Vector3{centerX, centerY, 0})
+	// app.CameraPersp().SetAspect(aspect)
+
+	// // Default camera is perspective
+	// app.SetCamera(app.CameraPersp())
+	// // Adds camera to scene (important for audio demos)
+	// app.Scene().Add(app.Camera().GetCamera())
 
 	// Subscribe to window key events
 	app.Window().Subscribe(window.OnKeyDown, func(evname string, ev interface{}) {
@@ -197,6 +224,11 @@ func (app *App) setupScene() {
 		app.OnWindowResize()
 	})
 
+	// Subscribe to mouse button down events
+	app.Window().Subscribe(window.OnMouseDown, func(evname string, ev interface{}) {
+		app.onMouse(ev)
+	})
+
 	// Because all windows events were cleared
 	// We need to inform the gui root panel to subscribe again.
 	app.Gui().SubscribeWin()
@@ -210,6 +242,24 @@ func (app *App) setupScene() {
 	app.control.Clear()
 }
 
+func (app *App) onMouse(ev interface{}) {
+	// Convert mouse coordinates to normalized device coordinates
+	// mev := ev.(*window.MouseEvent)
+	// width, height := app.Window().Size()
+	// x := 2*(mev.Xpos/float32(width)) - 1
+	// y := -2*(mev.Ypos/float32(height)) + 1
+	// app.log.Info("Xpos: %f Ypos: %f", x, y)
+
+	// // Set the raycaster from the current camera and mouse coordinates
+	// app.Camera().SetRaycaster(t.rc, x, y)
+	// //fmt.Printf("rc:%+v\n", t.rc.Ray)
+
+	// // Checks intersection with all objects in the scene
+	// intersects := t.rc.IntersectObjects(app.Scene().Children(), true)
+	// //fmt.Printf("intersects:%+v\n", intersects)
+
+}
+
 // GuiPanel returns the current gui panel for demos to add elements to.
 func (app *App) GuiPanel() *gui.Panel {
 
@@ -217,12 +267,6 @@ func (app *App) GuiPanel() *gui.Panel {
 		return &app.Gui().Panel
 	}
 	return app.Panel3D().GetPanel()
-}
-
-// DirData returns the base directory for data
-func (app *App) DirData() string {
-
-	return app.dirData
 }
 
 // ControlFolder returns the application control folder
@@ -235,6 +279,10 @@ func (app *App) ControlFolder() *gui.ControlFolder {
 func (app *App) AmbLight() *light.Ambient {
 
 	return app.ambLight
+}
+
+func (app *App) CurrentFixture() *fixture.Fixture {
+	return app.fixtures[app.selected]
 }
 
 // UpdateFPS updates the fps value in the window title or header label
@@ -280,45 +328,6 @@ Draw calls/frame: %d
 		app.stats.Drawcalls,
 		app.stats.Cgocalls,
 	)
-}
-
-// checkDirData try to find and return the complete data directory path.
-// Aborts if not found
-func (app *App) checkDirData(dirDataName string) string {
-
-	// Checks first if data directory is in the current directory
-	if _, err := os.Stat(dirDataName); err == nil {
-		dirData, err := filepath.Abs(dirDataName)
-		if err != nil {
-			panic(err)
-		}
-		return dirData
-	}
-
-	// Get the executable path
-	execPath, err := osext.Executable()
-	if err != nil {
-		panic(err)
-	}
-
-	// Checks if data directory is in the executable directory
-	execDir := filepath.Dir(execPath)
-	path := filepath.Join(execDir, dirDataName)
-	if _, err := os.Stat(path); err == nil {
-		return path
-	}
-
-	// Assumes the executable is in $GOPATH/bin
-	goPath := filepath.Dir(execDir)
-	path = filepath.Join(goPath, "src", "github.com", "g3n", "g3nd", dirDataName)
-	// Checks data path
-	if _, err := os.Stat(path); err == nil {
-		return path
-	}
-
-	// Shows error message and aborts
-	app.log.Fatal("Data directory NOT FOUND")
-	return ""
 }
 
 // usage shows the application usage

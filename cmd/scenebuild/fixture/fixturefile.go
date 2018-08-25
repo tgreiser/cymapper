@@ -24,7 +24,7 @@ type Fixture struct {
 	scale     *math32.Vector3   // matrix multiply to scale points
 }
 
-func New(path string) *Fixture {
+func NewFixture(path string) *Fixture {
 	f := new(Fixture)
 	f.filepath = path
 	tsv, err := os.Open(path)
@@ -86,6 +86,10 @@ func (f *Fixture) Available() bool {
 	return f.idx < len(f.tpts)
 }
 
+func (f *Fixture) Length() int {
+	return len(f.tpts)
+}
+
 func (f *Fixture) Next() *math32.Vector3 {
 	defer func() { f.idx++ }()
 	return f.tpts[f.idx]
@@ -109,6 +113,14 @@ func (f Fixture) TransformedTopLeft() *math32.Vector3 {
 
 func (f Fixture) TransformedBottomRight() *math32.Vector3 {
 	return f.tbr
+}
+
+// Make the transformation permanent
+// Update all points and corners.
+func (f *Fixture) UpdatePoints() {
+	f.pts = f.tpts
+	f.tl = f.ttl
+	f.br = f.tbr
 }
 
 func (f *Fixture) Transformed() []*math32.Vector3 {

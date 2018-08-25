@@ -88,7 +88,7 @@ func main() {
 	defer gray.Close()
 
 	// read camera dimensions
-	if ok := webcam.Read(img); !ok {
+	if ok := webcam.Read(&img); !ok {
 		fmt.Printf("cannot read device %d\n", *deviceID)
 		return
 	}
@@ -115,7 +115,7 @@ func main() {
 
 	fmt.Printf("start reading camera device: %v with delay %v ms\n", *deviceID, *delayMs)
 	for {
-		if ok := webcam.Read(img); !ok {
+		if ok := webcam.Read(&img); !ok {
 			fmt.Printf("cannot read device %d\n", *deviceID)
 			return
 		}
@@ -170,14 +170,14 @@ func processFrame(window *gocv.Window, img, gray gocv.Mat) *image.Point {
 		return nil
 	}
 
-	gocv.CvtColor(img, gray, gocv.ColorRGBToGray)
-	gocv.GaussianBlur(gray, gray, image.Point{X: *radius, Y: *radius}, 0, 0, gocv.BorderDefault)
+	gocv.CvtColor(img, &gray, gocv.ColorRGBToGray)
+	gocv.GaussianBlur(gray, &gray, image.Point{X: *radius, Y: *radius}, 0, 0, gocv.BorderDefault)
 
 	// detect brightest point
 	_, _, _, maxLoc := gocv.MinMaxLoc(gray)
 
 	// draw a rectangle around the bright spot
-	gocv.Rectangle(img, image.Rect(maxLoc.X-6, maxLoc.Y-6, maxLoc.X+6, maxLoc.Y+6), blue, 3)
+	gocv.Rectangle(&img, image.Rect(maxLoc.X-6, maxLoc.Y-6, maxLoc.X+6, maxLoc.Y+6), blue, 3)
 
 	// show the image in the window, and wait 1 millisecond
 	//window.IMShow(img)

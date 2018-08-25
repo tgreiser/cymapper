@@ -72,3 +72,9 @@ cmd/cameramap
 > env.sh
 > cat output.tsv | go run cmd/resize/main.go
 ```
+
+### Start GUI
+```
+> go run cmd/scenebuild/main.go
+
+```
