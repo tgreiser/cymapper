@@ -87,7 +87,7 @@ func (f *Fixture) Available() bool {
 }
 
 func (f *Fixture) Length() int {
-    return len(f.tpts)
+	return len(f.tpts)
 }
 
 func (f *Fixture) Next() *math32.Vector3 {
@@ -115,8 +115,12 @@ func (f Fixture) TransformedBottomRight() *math32.Vector3 {
 	return f.tbr
 }
 
+// Make the transformation permanent
+// Update all points and corners.
 func (f *Fixture) UpdatePoints() {
-    f.pts = f.tpts
+	f.pts = f.tpts
+	f.tl = f.ttl
+	f.br = f.tbr
 }
 
 func (f *Fixture) Transformed() []*math32.Vector3 {
