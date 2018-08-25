@@ -1,11 +1,11 @@
 package app
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
-    "errors"
 
 	"github.com/g3n/engine/gui"
 	"github.com/g3n/engine/gui/assets/icon"
@@ -23,7 +23,7 @@ type FileSelect struct {
 }
 
 func NewFileSelect(width, height float32, relativeStartingPath string) (*FileSelect, error) {
-    //Use empty string to open startingPath in current directory
+	//Use empty string to open startingPath in current directory
 
 	fs := new(FileSelect)
 	fs.Panel.Initialize(width, height)
@@ -85,14 +85,14 @@ func NewFileSelect(width, height float32, relativeStartingPath string) (*FileSel
 	bc.Add(fs.bcan)
 
 	// Sets initial directory
-    path, err := os.Getwd()
-    if err != nil {
+	path, err := os.Getwd()
+	if err != nil {
 		return nil, err
 	}
-    if relativeStartingPath != "" {
-        path = filepath.Join(path, relativeStartingPath)
-    }
-    fs.SetPath(path)
+	if relativeStartingPath != "" {
+		path = filepath.Join(path, relativeStartingPath)
+	}
+	fs.SetPath(path)
 
 	return fs, nil
 }
@@ -102,7 +102,7 @@ func (fs *FileSelect) Show(show bool) {
 
 	if show {
 		fs.SetVisible(true)
-        fs.SetPath(fs.path.Text())
+		fs.SetPath(fs.path.Text())
 		parent := fs.Parent().(gui.IPanel).GetPanel()
 		px := (parent.Width() - fs.Width()) / 2
 		py := (parent.Height() - fs.Height()) / 2
@@ -162,11 +162,11 @@ func (fs *FileSelect) SetPath(path string) error {
 }
 
 func (fs *FileSelect) Selected() (string, error) {
-    fileNameLowerBox := fs.filename.Text()
-    if len(fileNameLowerBox) == 0 {
-        return "", errors.New("file not selected")
-    }
-    return filepath.Join(fs.path.Text(), fileNameLowerBox), nil
+	fileNameLowerBox := fs.filename.Text()
+	if len(fileNameLowerBox) == 0 {
+		return "", errors.New("file not selected")
+	}
+	return filepath.Join(fs.path.Text(), fileNameLowerBox), nil
 }
 
 func (fs *FileSelect) onSelect() {

@@ -33,13 +33,13 @@ type App struct {
 	selected                 int // selected fixture
 	width                    *gui.Edit
 	height                   *gui.Edit
-	tlx                      *gui.Edit          // Top left x; x coordinate of top left corner of current fixture
-	tly                      *gui.Edit          // Top left y
-	brx                      *gui.Edit          // Bottom right x
-	bry                      *gui.Edit          // Bottom right y
+	tlx                      *gui.Edit // Top left x; x coordinate of top left corner of current fixture
+	tly                      *gui.Edit // Top left y
+	brx                      *gui.Edit // Bottom right x
+	bry                      *gui.Edit // Bottom right y
 	sceneWidth               float32
 	sceneHeight              float32
-    zoom                     *gui.Slider
+	zoom                     *gui.Slider
 }
 
 type IScreen interface {
@@ -85,7 +85,7 @@ func Create() *App {
 	app := new(App)
 	app.sceneWidth = 1280
 	app.sceneHeight = 720
-    app.selected = -1
+	app.selected = -1
 	app.Application = a
 	app.log = app.Log()
 	app.log.Info("%s v%d.%d starting", progName, vmajor, vminor)
@@ -169,14 +169,13 @@ func (app *App) setupScene() {
 	//aspect := float32(width) / float32(height)
 	//camOrtho := camera.NewOrthographic(0, 640, 480, 0, 0.1, 100)
 
-
 	vx := app.sceneWidth / 2
 	vy := app.sceneHeight / 2
 	app.CameraOrtho().SetPosition(vx, vy, 99)
 	app.CameraOrtho().LookAt(&math32.Vector3{vx, vy, 0})
-    if app.zoom != nil {
-        app.CameraOrtho().SetZoom(app.zoom.Value() / 100)
-    }
+	if app.zoom != nil {
+		app.CameraOrtho().SetZoom(app.zoom.Value() / 100)
+	}
 
 	// Default camera is perspective
 	app.SetCamera(app.CameraOrtho())
@@ -184,8 +183,7 @@ func (app *App) setupScene() {
 	// Adds camera to scene (important for audio demos)
 	app.Scene().Add(app.CameraOrtho().GetCamera())
 
-
-    // Setup for perspective camera
+	// Setup for perspective camera
 
 	// centerX := app.sceneWidth / 2
 	// centerY := app.sceneHeight / 2
@@ -201,7 +199,6 @@ func (app *App) setupScene() {
 	// app.SetCamera(app.CameraPersp())
 	// // Adds camera to scene (important for audio demos)
 	// app.Scene().Add(app.Camera().GetCamera())
-
 
 	// Subscribe to window key events
 	app.Window().Subscribe(window.OnKeyDown, func(evname string, ev interface{}) {
@@ -251,7 +248,7 @@ func (app *App) onMouse(ev interface{}) {
 	// width, height := app.Window().Size()
 	// x := 2*(mev.Xpos/float32(width)) - 1
 	// y := -2*(mev.Ypos/float32(height)) + 1
-    // app.log.Info("Xpos: %f Ypos: %f", x, y)
+	// app.log.Info("Xpos: %f Ypos: %f", x, y)
 
 	// // Set the raycaster from the current camera and mouse coordinates
 	// app.Camera().SetRaycaster(t.rc, x, y)
@@ -285,7 +282,7 @@ func (app *App) AmbLight() *light.Ambient {
 }
 
 func (app *App) CurrentFixture() *fixture.Fixture {
-    return app.fixtures[app.selected]
+	return app.fixtures[app.selected]
 }
 
 // UpdateFPS updates the fps value in the window title or header label

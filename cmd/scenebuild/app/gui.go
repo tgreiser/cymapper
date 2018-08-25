@@ -12,8 +12,8 @@ import (
 	"github.com/g3n/engine/material"
 	"github.com/g3n/engine/math32"
 	"github.com/g3n/engine/window"
+	"github.com/gerow/go-color"
 	"github.com/tgreiser/cymapper/cmd/scenebuild/fixture"
-    "github.com/gerow/go-color"
 )
 
 var darkTextColor = &math32.Color{.4, .4, .4}
@@ -82,7 +82,7 @@ func (app *App) buildGui() {
 	app.zoom = gui.NewHSlider(100, 30)
 	app.zoom.SetPosition(420, 0)
 	app.zoom.SetText("Zoom")
-    app.zoom.SetValue(0.3)
+	app.zoom.SetValue(0.3)
 	app.zoom.Subscribe(gui.OnChange, func(name string, ev interface{}) {
 		app.CameraOrtho().SetZoom(app.zoom.Value() / 100)
 		app.SetCamera(app.CameraOrtho())
@@ -196,9 +196,9 @@ func (app *App) buildGui() {
 		app.setupScene()
 		fixtures.SelectPos(-1)
 
-        // Removes and then creates new fixture panel because it's a pain to modify
-        cpanel.Remove(fixtures)
-        fixtures = app.newFixturesDropDown(cpanel)
+		// Removes and then creates new fixture panel because it's a pain to modify
+		cpanel.Remove(fixtures)
+		fixtures = app.newFixturesDropDown(cpanel)
 
 		app.selected = -1
 		app.fixtures = nil
@@ -234,7 +234,7 @@ func (app *App) buildGui() {
 			app.Log().Error("Invalid bottom right coordinates %v\n", app.bry.Text())
 		}
 
-        app.transformFixtureTo(app.CurrentFixture(), ntlx, ntly, nbrx, nbry)
+		app.transformFixtureTo(app.CurrentFixture(), ntlx, ntly, nbrx, nbry)
 	}
 	app.tlx.Subscribe(gui.OnChange, xform)
 	app.tly.Subscribe(gui.OnChange, xform)
@@ -245,7 +245,7 @@ func (app *App) buildGui() {
 	bFlipX.SetPosition(454, 80)
 	bFlipX.SetWidth(60)
 	bFlipX.Subscribe(gui.OnClick, func(name string, ev interface{}) {
-        app.flip("X")
+		app.flip("X")
 	})
 	cpanel.Add(bFlipX)
 
@@ -253,7 +253,7 @@ func (app *App) buildGui() {
 	bFlipY.SetPosition(522, 80)
 	bFlipY.SetWidth(60)
 	bFlipY.Subscribe(gui.OnClick, func(name string, ev interface{}) {
-        app.flip("Y")
+		app.flip("Y")
 	})
 	cpanel.Add(bFlipY)
 
@@ -268,9 +268,9 @@ func (app *App) buildGui() {
 	app.sceneFS.Subscribe("OnOK", func(evname string, ev interface{}) {
 		fpath, err := app.sceneFS.Selected()
 		if err != nil {
-            if err.Error() == "file not selected" {
-                app.ed.Show("File not selected")
-            }
+			if err.Error() == "file not selected" {
+				app.ed.Show("File not selected")
+			}
 			return
 		}
 		app.log.Info("Selected file: %v", fpath)
@@ -295,31 +295,31 @@ func (app *App) buildGui() {
 	app.fs.Subscribe("OnOK", func(evname string, ev interface{}) {
 		fpath, err := app.fs.Selected()
 		if err != nil {
-            if err.Error() == "file not selected" {
-                app.ed.Show("File not selected")
-            }
+			if err.Error() == "file not selected" {
+				app.ed.Show("File not selected")
+			}
 			return
 		}
 		app.log.Info("Selected file: %v", fpath)
 		// parse relative vectors for fixture
 		app.newFixture(fpath)
-        app.DrawFixtures()
+		app.DrawFixtures()
 		app.fs.Show(false)
-        newFixture := gui.NewImageLabel(filepath.Base(fpath))
+		newFixture := gui.NewImageLabel(filepath.Base(fpath))
 		fixtures.Add(newFixture)
 		fixtures.SelectPos(fixtures.Len() - 1)
-        app.selected = fixtures.Len() - 1
+		app.selected = fixtures.Len() - 1
 
 		app.SetCorners()
-        app.Draw()
+		app.Draw()
 	})
 	app.fs.Subscribe("OnCancel", func(evname string, ev interface{}) {
 		app.fs.Show(false)
 	})
 	app.Gui().Add(app.fs)
 
-    app.ed = NewErrorDialog(600, 100)
-    app.Gui().Add(app.ed)
+	app.ed = NewErrorDialog(600, 100)
+	app.Gui().Add(app.ed)
 
 	app.Gui().Add(cpanel)
 
@@ -331,88 +331,88 @@ func (app *App) buildGui() {
 }
 
 func (app *App) newFixturesDropDown(cpanel *gui.Panel) *gui.DropDown {
-    fixtures := gui.NewDropDown(200, gui.NewImageLabel(""))
-    fixtures.SetHeight(26)
-    fixtures.SetPosition(162, 22)
-    fixtures.SelectPos(-1)
+	fixtures := gui.NewDropDown(200, gui.NewImageLabel(""))
+	fixtures.SetHeight(26)
+	fixtures.SetPosition(162, 22)
+	fixtures.SelectPos(-1)
 
-    cpanel.Add(fixtures)
-    fixtures.Subscribe(gui.OnChange, func(name string, ev interface{}) {
-        app.selected = fixtures.SelectedPos()
-        //app.Log().Debug("Change fixture %v %v", fixtures.SelectedPos(), fixtures.Selected().Text())
-        app.Draw()
-        app.SetCorners()
-    })
-    return fixtures
+	cpanel.Add(fixtures)
+	fixtures.Subscribe(gui.OnChange, func(name string, ev interface{}) {
+		app.selected = fixtures.SelectedPos()
+		//app.Log().Debug("Change fixture %v %v", fixtures.SelectedPos(), fixtures.Selected().Text())
+		app.Draw()
+		app.SetCorners()
+	})
+	return fixtures
 }
 
 func (app *App) transformFixtureTo(fixt *fixture.Fixture, ntlx, ntly, nbrx, nbry float64) {
-    newTL := math32.NewVector3(float32(ntlx), float32(ntly), 0)
-    newBR := math32.NewVector3(float32(nbrx), float32(nbry), 0)
-    sc, tr := fixture.NewTransformation(fixt.TopLeft(),
-        fixt.BottomRight(), newTL, newBR)
-    fixt.Transform(sc, tr)
-    app.Log().Debug("selected %v x %v\n", fixt.TopLeft(), fixt.BottomRight())
-    app.Log().Debug("SC %v x %v TR %v x %v\n", sc.X, sc.Y, tr.X, tr.Y)
+	newTL := math32.NewVector3(float32(ntlx), float32(ntly), 0)
+	newBR := math32.NewVector3(float32(nbrx), float32(nbry), 0)
+	sc, tr := fixture.NewTransformation(fixt.TopLeft(),
+		fixt.BottomRight(), newTL, newBR)
+	fixt.Transform(sc, tr)
+	app.Log().Debug("selected %v x %v\n", fixt.TopLeft(), fixt.BottomRight())
+	app.Log().Debug("SC %v x %v TR %v x %v\n", sc.X, sc.Y, tr.X, tr.Y)
 
-    app.Draw()
+	app.Draw()
 }
 
 func (app *App) flip(direction string) {
-    topLeftX, err := strconv.ParseFloat(app.tlx.Text(), 32)
-    if err != nil {
-        app.Log().Error("Invalid top left coordinates %v\n", app.tlx.Text())
-    }
-    topLeftY, err := strconv.ParseFloat(app.tly.Text(), 32)
-    if err != nil {
-        app.Log().Error("Invalid top left coordinates %v\n", app.tlx.Text())
-    }
-    bottomRightX, err := strconv.ParseFloat(app.brx.Text(), 32)
-    if err != nil {
-        app.Log().Error("Invalid bottom right coordinates %v\n", app.brx.Text())
-    }
-    bottomRightY, err := strconv.ParseFloat(app.bry.Text(), 32)
-    if err != nil {
-        app.Log().Error("Invalid bottom right coordinates %v\n", app.brx.Text())
-    }
+	topLeftX, err := strconv.ParseFloat(app.tlx.Text(), 32)
+	if err != nil {
+		app.Log().Error("Invalid top left coordinates %v\n", app.tlx.Text())
+	}
+	topLeftY, err := strconv.ParseFloat(app.tly.Text(), 32)
+	if err != nil {
+		app.Log().Error("Invalid top left coordinates %v\n", app.tlx.Text())
+	}
+	bottomRightX, err := strconv.ParseFloat(app.brx.Text(), 32)
+	if err != nil {
+		app.Log().Error("Invalid bottom right coordinates %v\n", app.brx.Text())
+	}
+	bottomRightY, err := strconv.ParseFloat(app.bry.Text(), 32)
+	if err != nil {
+		app.Log().Error("Invalid bottom right coordinates %v\n", app.brx.Text())
+	}
 
-    if app.selected < 0 {
-        return
-    }
-    currentFixture := app.CurrentFixture()
-    if direction == "X" {
-        // Swap Y values of current fixture.
-        app.transformFixtureTo(currentFixture, topLeftX, bottomRightY, bottomRightX, topLeftY)
-    } else if direction == "Y" {
-        // Swap X values of current fixture.
-        app.transformFixtureTo(currentFixture, bottomRightX, topLeftY, topLeftX,  bottomRightY)
-    } else {
-        return
-    }
+	if app.selected < 0 {
+		return
+	}
+	currentFixture := app.CurrentFixture()
+	if direction == "X" {
+		// Swap Y values of current fixture.
+		app.transformFixtureTo(currentFixture, topLeftX, bottomRightY, bottomRightX, topLeftY)
+	} else if direction == "Y" {
+		// Swap X values of current fixture.
+		app.transformFixtureTo(currentFixture, bottomRightX, topLeftY, topLeftX, bottomRightY)
+	} else {
+		return
+	}
 
-    currentFixture.UpdatePoints()
-    // currentFixture.tl, currentFixture.br = currentFixture.FindCorners(currentFixture.pts)
+	currentFixture.UpdatePoints()
+	// currentFixture.tl, currentFixture.br = currentFixture.FindCorners(currentFixture.pts)
 
-    // app.tly.SetText(bottomRightY)
-    // app.bry.SetText(topLeftY)
-    // app.tly.Dispatch(gui.OnChange, nil)
-    // app.bry.Dispatch(gui.OnChange, nil)
-    app.Draw()
+	// app.tly.SetText(bottomRightY)
+	// app.bry.SetText(topLeftY)
+	// app.tly.Dispatch(gui.OnChange, nil)
+	// app.bry.Dispatch(gui.OnChange, nil)
+	app.Draw()
 }
 
 func (app *App) newFixture(filePath string) {
-    newFixture := fixture.NewFixture(filePath)
-    app.fixtures = append(app.fixtures, newFixture)
+	newFixture := fixture.NewFixture(filePath)
+	app.fixtures = append(app.fixtures, newFixture)
 }
 
 func (app *App) SetCorners() {
-    if app.selected >= 0 {
-        fixture := app.fixtures[app.selected]
-        app.tlx.SetText(FormatFloat32(fixture.TransformedTopLeft().X))
-        app.tly.SetText(FormatFloat32(fixture.TransformedTopLeft().Y))
-        app.brx.SetText(FormatFloat32(fixture.TransformedBottomRight().X))
-        app.bry.SetText(FormatFloat32(fixture.TransformedBottomRight().Y))
-    }
+	if app.selected >= 0 {
+		fixture := app.fixtures[app.selected]
+		app.tlx.SetText(FormatFloat32(fixture.TransformedTopLeft().X))
+		app.tly.SetText(FormatFloat32(fixture.TransformedTopLeft().Y))
+		app.brx.SetText(FormatFloat32(fixture.TransformedBottomRight().X))
+		app.bry.SetText(FormatFloat32(fixture.TransformedBottomRight().Y))
+	}
 }
 
 func (app *App) Draw() {
@@ -466,17 +466,17 @@ func (app *App) DrawBounds() {
 }
 
 func (app *App) NewRainbowMaterial(hue float64) *material.Standard {
-    hslColor := color.HSL{hue, 1.0, 0.5}
-    goColorRGB := hslColor.ToRGB()
-    g3nRGB := &math32.Color{float32(goColorRGB.R),
-                           float32(goColorRGB.G),
-                           float32(goColorRGB.B),
-    }
+	hslColor := color.HSL{hue, 1.0, 0.5}
+	goColorRGB := hslColor.ToRGB()
+	g3nRGB := &math32.Color{float32(goColorRGB.R),
+		float32(goColorRGB.G),
+		float32(goColorRGB.B),
+	}
 
 	mat := material.NewStandard(g3nRGB)
 	mat.SetSide(material.SideDouble)
 	mat.SetWireframe(false)
-    return mat
+	return mat
 }
 
 func (app *App) DrawFixtures() {
@@ -486,13 +486,13 @@ func (app *App) DrawFixtures() {
 	rmat.SetWireframe(true)
 	rmat.SetLineWidth(1)
 
-    for iX, fixture := range app.fixtures {
+	for iX, fixture := range app.fixtures {
 		// add fixture vectors to scene
 		fixture.Reset()
 
-        for j := 0; fixture.Available(); j++ {
+		for j := 0; fixture.Available(); j++ {
 			geom := geometry.NewCircle(3, 16)
-            mat := app.NewRainbowMaterial(float64(j) / float64(fixture.Length()) * 0.67)
+			mat := app.NewRainbowMaterial(float64(j) / float64(fixture.Length()) * 0.67)
 			circle := graphic.NewMesh(geom, mat)
 			circle.SetPositionVec(fixture.Next())
 			app.Scene().Add(circle)
@@ -506,7 +506,7 @@ func (app *App) DrawFixtures() {
 			circle.SetPositionVec(fixture.TransformedBottomRight())
 			app.Scene().Add(circle)
 		}
-    }
+	}
 
 	err := app.Renderer().AddDefaultShaders()
 	if err != nil {
