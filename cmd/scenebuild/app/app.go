@@ -7,8 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tgreiser/cymapper/cmd/scenebuild/fixture"
-
 	"github.com/g3n/engine/gui"
 	"github.com/g3n/engine/light"
 	"github.com/g3n/engine/math32"
@@ -25,21 +23,11 @@ type App struct {
 	stats                    *stats.Stats       // statistics object
 	statsTable               *stats.StatsTable  // statistics table panel
 	control                  *gui.ControlFolder // Pointer to gui control panel
-	fs                       *FileSelect        // File select dialog
-	sceneFS                  *FileSelect
-	ed                       *ErrorDialog // Error dialog
+	ed                       *ErrorDialog       // Error dialog
 	ambLight                 *light.Ambient
-	fixtures                 []*fixture.Fixture
-	selected                 int // selected fixture
-	width                    *gui.Edit
-	height                   *gui.Edit
-	tlx                      *gui.Edit // Top left x; x coordinate of top left corner of current fixture
-	tly                      *gui.Edit // Top left y
-	brx                      *gui.Edit // Bottom right x
-	bry                      *gui.Edit // Bottom right y
+	zoom                     *gui.Slider
 	sceneWidth               float32
 	sceneHeight              float32
-	zoom                     *gui.Slider
 }
 
 type IScreen interface {
@@ -83,9 +71,6 @@ func Create() *App {
 		panic(err)
 	}
 	app := new(App)
-	app.sceneWidth = 1280
-	app.sceneHeight = 720
-	app.selected = -1
 	app.Application = a
 	app.log = app.Log()
 	app.log.Info("%s v%d.%d starting", progName, vmajor, vminor)
@@ -116,13 +101,16 @@ func Create() *App {
 		}
 	}
 
-	// Setup scene
-	app.setupScene()
-
 	// Builds user interface
 	if *oNogui == false {
 		app.buildGui()
 	}
+
+	// Setup scene
+	app.setupScene()
+
+	sui := &SceneUI{}
+	sui.Initialize(app)
 
 	// Subscribe to after render events to update the FPS
 	app.Subscribe(application.OnAfterRender, func(evname string, ev interface{}) {
@@ -145,11 +133,18 @@ func Create() *App {
 	return app
 }
 
-// setupScene resets the current scene for executing a new (or first) test
+// setupScene resets the current scene for displaying an IScreen
 func (app *App) setupScene() {
+	// Execute demo finalizers functions and clear finalizers list
+	/*for i := 0; i < len(app.finalizers); i++ {
+		app.finalizers[i]()
+	}
+	app.finalizers = app.finalizers[0:0]
+	*/
 	// Cancel next events and clear all window subscriptions
 	app.Window().CancelDispatch()
 	app.Window().ClearSubscriptions()
+	app.GuiPanel().ClearSubscriptions()
 
 	// Dispose of all test scene children
 	app.Scene().DisposeChildren(true)
@@ -159,6 +154,9 @@ func (app *App) setupScene() {
 
 	// Sets default background color
 	app.Gl().ClearColor(0, 0, 0, 1.0)
+
+	// Reset renderer z-sorting flag
+	app.Renderer().SetObjectSorting(true)
 
 	// Adds ambient light to the test scene
 	app.ambLight = light.NewAmbient(&math32.Color{1.0, 1.0, 1.0}, 0.5)
@@ -177,28 +175,11 @@ func (app *App) setupScene() {
 		app.CameraOrtho().SetZoom(app.zoom.Value() / 100)
 	}
 
-	// Default camera is perspective
+	// Default camera is ortho
 	app.SetCamera(app.CameraOrtho())
 	//app.SetOrbit(control.NewOrbitControl(camOrtho, app.Window()))
 	// Adds camera to scene (important for audio demos)
 	app.Scene().Add(app.CameraOrtho().GetCamera())
-
-	// Setup for perspective camera
-
-	// centerX := app.sceneWidth / 2
-	// centerY := app.sceneHeight / 2
-
-	// // Sets perspective camera position
-	// width, height := app.Window().Size()
-	// aspect := float32(width) / float32(height)
-	// app.CameraPersp().SetPosition(centerX, centerY, 1000)
-	// app.CameraPersp().LookAt(&math32.Vector3{centerX, centerY, 0})
-	// app.CameraPersp().SetAspect(aspect)
-
-	// // Default camera is perspective
-	// app.SetCamera(app.CameraPersp())
-	// // Adds camera to scene (important for audio demos)
-	// app.Scene().Add(app.Camera().GetCamera())
 
 	// Subscribe to window key events
 	app.Window().Subscribe(window.OnKeyDown, func(evname string, ev interface{}) {
@@ -224,14 +205,16 @@ func (app *App) setupScene() {
 		app.OnWindowResize()
 	})
 
-	// Subscribe to mouse button down events
-	app.Window().Subscribe(window.OnMouseDown, func(evname string, ev interface{}) {
-		app.onMouse(ev)
-	})
-
 	// Because all windows events were cleared
 	// We need to inform the gui root panel to subscribe again.
 	app.Gui().SubscribeWin()
+
+	/*
+		// Subscribe to mouse button down events
+		app.Window().Subscribe(window.OnMouseDown, func(evname string, ev interface{}) {
+			app.onMouse(ev)
+		})
+	*/
 
 	// If no gui control folder, nothing more to do
 	if app.control == nil {
@@ -279,10 +262,6 @@ func (app *App) ControlFolder() *gui.ControlFolder {
 func (app *App) AmbLight() *light.Ambient {
 
 	return app.ambLight
-}
-
-func (app *App) CurrentFixture() *fixture.Fixture {
-	return app.fixtures[app.selected]
 }
 
 // UpdateFPS updates the fps value in the window title or header label
