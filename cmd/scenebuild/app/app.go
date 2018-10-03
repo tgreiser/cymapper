@@ -26,8 +26,8 @@ type App struct {
 	ed                       *ErrorDialog       // Error dialog
 	ambLight                 *light.Ambient
 	zoom                     *gui.Slider
-	sceneWidth               float32
-	sceneHeight              float32
+	screen                   IScreen  // Current IScreen being rendered
+	finalizers               []func() // List of finalizers functions
 }
 
 type IScreen interface {
@@ -111,6 +111,14 @@ func Create() *App {
 
 	sui := &SceneUI{}
 	sui.Initialize(app)
+	app.screen = sui
+
+	// Subscribe to before render events to call current screen Render method
+	app.Subscribe(application.OnBeforeRender, func(evname string, ev interface{}) {
+		if app.screen != nil {
+			app.screen.Render(app)
+		}
+	})
 
 	// Subscribe to after render events to update the FPS
 	app.Subscribe(application.OnAfterRender, func(evname string, ev interface{}) {
@@ -133,14 +141,24 @@ func Create() *App {
 	return app
 }
 
+// AddFinalizer adds a function which will be executed before another screen is started
+func (app *App) AddFinalizer(f func()) {
+
+	app.finalizers = append(app.finalizers, f)
+}
+
+func (app *App) RunFinalizers() {
+	for i := 0; i < len(app.finalizers); i++ {
+		app.finalizers[i]()
+	}
+}
+
 // setupScene resets the current scene for displaying an IScreen
 func (app *App) setupScene() {
 	// Execute demo finalizers functions and clear finalizers list
-	/*for i := 0; i < len(app.finalizers); i++ {
-		app.finalizers[i]()
-	}
+	app.RunFinalizers()
 	app.finalizers = app.finalizers[0:0]
-	*/
+
 	// Cancel next events and clear all window subscriptions
 	app.Window().CancelDispatch()
 	app.Window().ClearSubscriptions()
@@ -160,17 +178,14 @@ func (app *App) setupScene() {
 
 	// Adds ambient light to the test scene
 	app.ambLight = light.NewAmbient(&math32.Color{1.0, 1.0, 1.0}, 0.5)
-	app.Scene().Add(app.ambLight)
 
 	// Sets perspective camera position
 	//width, height := app.Window().Size()
 	//aspect := float32(width) / float32(height)
 	//camOrtho := camera.NewOrthographic(0, 640, 480, 0, 0.1, 100)
 
-	vx := app.sceneWidth / 2
-	vy := app.sceneHeight / 2
-	app.CameraOrtho().SetPosition(vx, vy, 99)
-	app.CameraOrtho().LookAt(&math32.Vector3{vx, vy, 0})
+	app.CameraOrtho().SetPosition(0, 0, 99)
+	app.CameraOrtho().LookAt(&math32.Vector3{0, 0, 0})
 	if app.zoom != nil {
 		app.CameraOrtho().SetZoom(app.zoom.Value() / 100)
 	}
@@ -179,7 +194,6 @@ func (app *App) setupScene() {
 	app.SetCamera(app.CameraOrtho())
 	//app.SetOrbit(control.NewOrbitControl(camOrtho, app.Window()))
 	// Adds camera to scene (important for audio demos)
-	app.Scene().Add(app.CameraOrtho().GetCamera())
 
 	// Subscribe to window key events
 	app.Window().Subscribe(window.OnKeyDown, func(evname string, ev interface{}) {

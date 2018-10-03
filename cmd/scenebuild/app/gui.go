@@ -86,14 +86,12 @@ func (app *App) buildGui() {
 	bTestCam.SetWidth(90)
 	bTestCam.SetHeight(30)
 	bTestCam.Subscribe(gui.OnClick, func(name string, ev interface{}) {
-		// TODO - need a system for loading other screens
 		app.Log().Info("setupScene")
 		app.setupScene()
 		cs := CameraSettings{}
 		app.Log().Info("initialize")
-		// TODO - this is causing a panic
-		// core.INode is *core.Node, not *gui.Panel
 		cs.Initialize(app)
+		app.screen = &cs
 	})
 	header.Add(bTestCam)
 

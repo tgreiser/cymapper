@@ -16,27 +16,29 @@ import (
 )
 
 type SceneUI struct {
-	devId    *gui.Edit
-	fs       *FileSelect // File select dialog
-	sceneFS  *FileSelect
-	fixtures []*fixture.Fixture
-	selected int // selected fixture
-	width    *gui.Edit
-	height   *gui.Edit
-	tlx      *gui.Edit // Top left x; x coordinate of top left corner of current fixture
-	tly      *gui.Edit // Top left y
-	brx      *gui.Edit // Bottom right x
-	bry      *gui.Edit // Bottom right y
-	log      *logger.Logger
-	app      *App
+	devId       *gui.Edit
+	fs          *FileSelect // File select dialog
+	sceneFS     *FileSelect
+	fixtures    []*fixture.Fixture
+	selected    int // selected fixture
+	sceneWidth  float32
+	sceneHeight float32
+	width       *gui.Edit
+	height      *gui.Edit
+	tlx         *gui.Edit // Top left x; x coordinate of top left corner of current fixture
+	tly         *gui.Edit // Top left y
+	brx         *gui.Edit // Bottom right x
+	bry         *gui.Edit // Bottom right y
+	log         *logger.Logger
+	app         *App
 }
 
 func (s *SceneUI) Initialize(app *App) {
 	s.log = app.Log()
 	s.app = app
 
-	app.sceneWidth = 1280
-	app.sceneHeight = 720
+	s.sceneWidth = 1280
+	s.sceneHeight = 720
 	s.selected = -1
 
 	// Adds control panel after the header
@@ -114,8 +116,8 @@ func (s *SceneUI) Initialize(app *App) {
 	wl.SetColor(darkTextColor)
 	cpanel.Add(wl)
 
-	s.width = gui.NewEdit(50, FormatFloat32(app.sceneWidth))
-	s.width.SetText(FormatFloat32(app.sceneWidth))
+	s.width = gui.NewEdit(50, FormatFloat32(s.sceneWidth))
+	s.width.SetText(FormatFloat32(s.sceneWidth))
 	s.width.SetPosition(650, 32)
 
 	cpanel.Add(s.width)
@@ -125,12 +127,10 @@ func (s *SceneUI) Initialize(app *App) {
 	hl.SetColor(darkTextColor)
 	cpanel.Add(hl)
 
-	s.height = gui.NewEdit(50, FormatFloat32(app.sceneHeight))
-	s.height.SetText(FormatFloat32(app.sceneHeight))
+	s.height = gui.NewEdit(50, FormatFloat32(s.sceneHeight))
+	s.height.SetText(FormatFloat32(s.sceneHeight))
 	s.height.SetPosition(650, 52)
 	drawBounds := func(name string, ev interface{}) {
-		app.sceneWidth = ParseFloat32(s.width.Text(), app.sceneWidth)
-		app.sceneHeight = ParseFloat32(s.height.Text(), app.sceneHeight)
 		s.Draw()
 	}
 	s.width.Subscribe(gui.OnChange, drawBounds)
@@ -143,7 +143,7 @@ func (s *SceneUI) Initialize(app *App) {
 	bReset.SetWidth(60)
 	bReset.Subscribe(gui.OnClick, func(name string, ev interface{}) {
 		app.Scene().RemoveAll(true)
-		app.setupScene()
+		//app.setupScene()
 		fixtures.SelectPos(-1)
 
 		// Removes and then creates new fixture panel because it's a pain to modify
@@ -157,7 +157,7 @@ func (s *SceneUI) Initialize(app *App) {
 		s.tly.SetText("")
 		s.brx.SetText("")
 		s.bry.SetText("")
-		drawBounds("", "")
+		s.Draw()
 	})
 	cpanel.Add(bReset)
 
@@ -360,10 +360,26 @@ func (s *SceneUI) SetCorners() {
 }
 
 func (s *SceneUI) Draw() {
-	s.app.Scene().RemoveAll(false)
-	s.app.setupScene()
+	s.app.Scene().RemoveAll(true)
+	s.app.Scene().Add(s.app.ambLight)
+	s.app.Scene().Add(s.app.CameraOrtho().GetCamera())
+	//s.app.setupScene()
+	s.CenterCamera()
 	s.DrawBounds()
 	s.DrawFixtures()
+}
+
+func (s *SceneUI) CenterCamera() {
+	s.sceneWidth = ParseFloat32(s.width.Text(), s.sceneWidth)
+	s.sceneHeight = ParseFloat32(s.height.Text(), s.sceneHeight)
+	vx := s.sceneWidth / 2
+	vy := s.sceneHeight / 2
+	s.app.Log().Debug("CenterCamera %v x %v", vx, vy)
+	s.app.CameraOrtho().SetPosition(vx, vy, 99)
+	s.app.CameraOrtho().LookAt(&math32.Vector3{vx, vy, 0})
+	if s.app.zoom != nil {
+		s.app.CameraOrtho().SetZoom(s.app.zoom.Value() / 100)
+	}
 }
 
 func (s *SceneUI) DrawBounds() {
@@ -376,19 +392,19 @@ func (s *SceneUI) DrawBounds() {
 
 	geom := geometry.NewCircle(1, 16)
 	circle := graphic.NewMesh(geom, gmat)
-	circle.SetPosition(s.app.sceneWidth/2, s.app.sceneHeight/2, 0)
+	circle.SetPosition(s.sceneWidth/2, s.sceneHeight/2, 0)
 	s.app.Scene().Add(circle)
 
 	geom2 := geometry.NewGeometry()
 	vertices := math32.NewArrayF32(0, 16)
 	vertices.Append(
 		0, 0, 0,
-		0, s.app.sceneHeight, 0,
-		0, s.app.sceneHeight, 0,
-		s.app.sceneWidth, s.app.sceneHeight, 0,
-		s.app.sceneWidth, s.app.sceneHeight, 0,
-		s.app.sceneWidth, 0, 0,
-		s.app.sceneWidth, 0, 0,
+		0, s.sceneHeight, 0,
+		0, s.sceneHeight, 0,
+		s.sceneWidth, s.sceneHeight, 0,
+		s.sceneWidth, s.sceneHeight, 0,
+		s.sceneWidth, 0, 0,
+		s.sceneWidth, 0, 0,
 		0, 0, 0,
 	)
 	colors := math32.NewArrayF32(0, 16)
@@ -424,7 +440,6 @@ func (s *SceneUI) NewRainbowMaterial(hue float64) *material.Standard {
 }
 
 func (s *SceneUI) DrawFixtures() {
-
 	rmat := material.NewStandard(math32.NewColor("red"))
 	rmat.SetSide(material.SideFront)
 	rmat.SetWireframe(true)
@@ -433,6 +448,7 @@ func (s *SceneUI) DrawFixtures() {
 	for iX, fixture := range s.fixtures {
 		// add fixture vectors to scene
 		fixture.Reset()
+		s.app.Log().Debug("fixture %v", iX)
 
 		for j := 0; fixture.Available(); j++ {
 			geom := geometry.NewCircle(3, 16)
@@ -440,7 +456,7 @@ func (s *SceneUI) DrawFixtures() {
 			circle := graphic.NewMesh(geom, mat)
 			circle.SetPositionVec(fixture.Next())
 			s.app.Scene().Add(circle)
-			//app.Log().Debug("%v", circle.Position())
+			//s.app.Log().Debug("%v", circle.Position())
 		}
 		if iX == s.selected {
 			circle := graphic.NewMesh(geometry.NewCircle(6, 16), rmat)
