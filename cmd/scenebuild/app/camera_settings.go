@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"image"
 	"os"
 
 	"github.com/g3n/engine/gui"
@@ -33,14 +34,10 @@ func (s *CameraSettings) Initialize(a *App) {
 	// prepare image matricies
 	s.mat = gocv.NewMat()
 
-	// open display window
-	s.window = gocv.NewWindow("CyMapper")
-
 	a.AddFinalizer(func() {
 		// finalizer will close image and webcam
 		s.webcam.Close()
 		s.mat.Close()
-		s.window.Close()
 	})
 
 	// Adds control panel after the header
@@ -64,13 +61,6 @@ func (s *CameraSettings) Initialize(a *App) {
 
 	a.GuiPanel().Add(cpanel)
 
-	s.img, err = gui.NewImage("IMG_6165.jpg")
-	if err != nil {
-		fmt.Printf("Error adding image: %v\n", err)
-		return
-	}
-	a.GuiPanel().Add(s.img)
-
 	// gocv logic
 	// channel to receive os signal
 	//s.c = make(chan os.Signal, 1)
@@ -90,7 +80,10 @@ func (s *CameraSettings) Render(a *App) {
 		fmt.Errorf("Unable to read frame: %v\n", err)
 		return
 	}
-	fmt.Printf("Got img %T\n", img)
 
+	if img, ok := img.(*image.RGBA); ok {
+		s.img = gui.NewImageFromRGBA(img)
+		a.GuiPanel().Add(s.img)
+	}
 	//col :=
 }

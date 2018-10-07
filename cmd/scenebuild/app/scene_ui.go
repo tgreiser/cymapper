@@ -138,6 +138,16 @@ func (s *SceneUI) Initialize(app *App) {
 	cpanel.Add(s.height)
 	s.Draw()
 
+	app.zoom = gui.NewHSlider(100, 30)
+	app.zoom.SetPosition(650, 82)
+	app.zoom.SetText("Zoom")
+	app.zoom.Subscribe(gui.OnChange, func(name string, ev interface{}) {
+		app.CameraOrtho().SetZoom(app.zoom.Value() / 100)
+		app.SetCamera(app.CameraOrtho())
+	})
+	app.zoom.SetValue(0.3)
+	cpanel.Add(app.zoom)
+
 	bReset := gui.NewButton("Reset")
 	bReset.SetPosition(98, 22)
 	bReset.SetWidth(60)
@@ -360,6 +370,7 @@ func (s *SceneUI) SetCorners() {
 }
 
 func (s *SceneUI) Draw() {
+	s.app.Log().Info("Draw")
 	s.app.Scene().RemoveAll(true)
 	s.app.Scene().Add(s.app.ambLight)
 	s.app.Scene().Add(s.app.CameraOrtho().GetCamera())
@@ -383,6 +394,7 @@ func (s *SceneUI) CenterCamera() {
 }
 
 func (s *SceneUI) DrawBounds() {
+	s.app.Log().Info("DrawBounds")
 	mat := material.NewBasic()
 
 	gmat := material.NewStandard(math32.NewColor("green"))

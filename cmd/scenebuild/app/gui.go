@@ -72,16 +72,6 @@ func (app *App) buildGui() {
 		header.Add(app.labelFPS)
 	}
 
-	app.zoom = gui.NewHSlider(100, 30)
-	app.zoom.SetPosition(420, 0)
-	app.zoom.SetText("Zoom")
-	app.zoom.SetValue(0.3)
-	app.zoom.Subscribe(gui.OnChange, func(name string, ev interface{}) {
-		app.CameraOrtho().SetZoom(app.zoom.Value() / 100)
-		app.SetCamera(app.CameraOrtho())
-	})
-	header.Add(app.zoom)
-
 	bTestCam := gui.NewButton("Setup Camera")
 	bTestCam.SetWidth(90)
 	bTestCam.SetHeight(30)
