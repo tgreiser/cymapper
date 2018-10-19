@@ -49,6 +49,13 @@ Source: "C:\opencv\build\bin\libopencv_imgproc342.dll"; DestDir: "{app}"; Flags:
 Source: "C:\opencv\build\bin\libopencv_line_descriptor342.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\opencv\build\bin\libopencv_ml342.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\opencv\build\bin\libopencv_objdetect342.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\opencv\build\bin\libopencv_video342.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\opencv\build\bin\libopencv_videoio342.dll"; DestDir: "{app}"; Flags: ignoreversion
+; g3n files
+Source: "D:\Code\go\src\github.com\tgreiser\cymapper\cmd\scenebuild\libogg.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "D:\Code\go\src\github.com\tgreiser\cymapper\cmd\scenebuild\libvorbis.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "D:\Code\go\src\github.com\tgreiser\cymapper\cmd\scenebuild\OpenAL32.dll"; DestDir: "{app}"; Flags: ignoreversion
+
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]

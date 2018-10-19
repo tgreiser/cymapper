@@ -83,7 +83,8 @@ func (s *CameraSettings) Render(a *App) {
 
 	if img, ok := img.(*image.RGBA); ok {
 		s.img = gui.NewImageFromRGBA(img)
-		a.GuiPanel().Add(s.img)
+		s.img.SetPosition(75, 128)
+		a.GuiPanel().Add(s.img) //FIXME Possible source of memory leak
 	}
 	//col :=
 }
