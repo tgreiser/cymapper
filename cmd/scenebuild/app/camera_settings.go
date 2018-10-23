@@ -17,7 +17,6 @@ type CameraSettings struct {
 	mat      gocv.Mat
 	window   *gocv.Window
 	webcam   *gocv.VideoCapture
-	img      *gui.Image
 }
 
 func (s *CameraSettings) Initialize(a *App) {
@@ -82,9 +81,9 @@ func (s *CameraSettings) Render(a *App) {
 	}
 
 	if img, ok := img.(*image.RGBA); ok {
-		s.img = gui.NewImageFromRGBA(img)
-		s.img.SetPosition(75, 128)
-		a.GuiPanel().Add(s.img) //FIXME Possible source of memory leak
+		img := gui.NewImageFromRGBA(img)
+		img.SetPosition(75, 128)
+		a.GuiPanel().Add(img) //FIXME Possible source of memory leak
 	}
 	//col :=
 }

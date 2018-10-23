@@ -26,8 +26,9 @@ type App struct {
 	ed                       *ErrorDialog       // Error dialog
 	ambLight                 *light.Ambient
 	zoom                     *gui.Slider
-	screen                   IScreen  // Current IScreen being rendered
-	finalizers               []func() // List of finalizers functions
+	screen                   IScreen            // Current IScreen being rendered
+	finalizers               []func()           // List of finalizers functions
+	location                 string             // Current location. "main" or "webcam" are options
 }
 
 type IScreen interface {
@@ -112,6 +113,7 @@ func Create() *App {
 	sui := &SceneUI{}
 	sui.Initialize(app)
 	app.screen = sui
+	app.location = "main"
 
 	// Subscribe to before render events to call current screen Render method
 	app.Subscribe(application.OnBeforeRender, func(evname string, ev interface{}) {

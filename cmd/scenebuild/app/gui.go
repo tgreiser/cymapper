@@ -78,10 +78,21 @@ func (app *App) buildGui() {
 	bTestCam.Subscribe(gui.OnClick, func(name string, ev interface{}) {
 		app.Log().Info("setupScene")
 		app.setupScene()
-		cs := CameraSettings{}
-		app.Log().Info("initialize")
-		cs.Initialize(app)
-		app.screen = &cs
+
+		var newScene IScreen
+
+		if app.location == "main" {
+			app.location = "webcam"
+			newScene = &CameraSettings{}
+		} else if app.location == "webcam" {
+			app.location = "main"
+			newScene = &SceneUI{}
+		} else {
+			panic("app.location is invalid")
+		}
+		newScene.Initialize(app)
+		app.Log().Info("Toggling scene")
+		app.screen = newScene
 	})
 	header.Add(bTestCam)
 
