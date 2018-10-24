@@ -26,35 +26,35 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "D:\Code\go\src\github.com\tgreiser\cymapper\cmd\scenebuild\cymapper.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\opencv\build\bin\libopencv_aruco342.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\opencv\build\bin\libopencv_bgsegm342.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\opencv\build\bin\libopencv_bioinspired342.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\opencv\build\bin\libopencv_calib3d342.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\opencv\build\bin\libopencv_ccalib342.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\opencv\build\bin\libopencv_core342.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\opencv\build\bin\libopencv_datasets342.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\opencv\build\bin\libopencv_dnn_objdetect342.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\opencv\build\bin\libopencv_dnn342.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\opencv\build\bin\libopencv_dpm342.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\opencv\build\bin\libopencv_face342.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\opencv\build\bin\libopencv_features2d342.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\opencv\build\bin\libopencv_flann342.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\opencv\build\bin\libopencv_fuzzy342.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\opencv\build\bin\libopencv_hfs342.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\opencv\build\bin\libopencv_highgui342.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\opencv\build\bin\libopencv_img_hash342.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\opencv\build\bin\libopencv_imgcodecs342.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\opencv\build\bin\libopencv_imgproc342.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\opencv\build\bin\libopencv_line_descriptor342.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\opencv\build\bin\libopencv_ml342.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\opencv\build\bin\libopencv_objdetect342.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\opencv\build\bin\libopencv_video342.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\opencv\build\bin\libopencv_videoio342.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "cmd\scenebuild\cymapper.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\opencv\build\bin\libopencv_aruco343.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\opencv\build\bin\libopencv_bgsegm343.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\opencv\build\bin\libopencv_bioinspired343.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\opencv\build\bin\libopencv_calib3d343.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\opencv\build\bin\libopencv_ccalib343.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\opencv\build\bin\libopencv_core343.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\opencv\build\bin\libopencv_datasets343.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\opencv\build\bin\libopencv_dnn_objdetect343.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\opencv\build\bin\libopencv_dnn343.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\opencv\build\bin\libopencv_dpm343.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\opencv\build\bin\libopencv_face343.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\opencv\build\bin\libopencv_features2d343.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\opencv\build\bin\libopencv_flann343.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\opencv\build\bin\libopencv_fuzzy343.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\opencv\build\bin\libopencv_hfs343.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\opencv\build\bin\libopencv_highgui343.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\opencv\build\bin\libopencv_img_hash343.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\opencv\build\bin\libopencv_imgcodecs343.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\opencv\build\bin\libopencv_imgproc343.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\opencv\build\bin\libopencv_line_descriptor343.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\opencv\build\bin\libopencv_ml343.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\opencv\build\bin\libopencv_objdetect343.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\opencv\build\bin\libopencv_video343.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\opencv\build\bin\libopencv_videoio343.dll"; DestDir: "{app}"; Flags: ignoreversion
 ; g3n files
-Source: "D:\Code\go\src\github.com\tgreiser\cymapper\cmd\scenebuild\libogg.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "D:\Code\go\src\github.com\tgreiser\cymapper\cmd\scenebuild\libvorbis.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "D:\Code\go\src\github.com\tgreiser\cymapper\cmd\scenebuild\OpenAL32.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "cmd\scenebuild\libogg.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "cmd\scenebuild\libvorbis.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "cmd\scenebuild\OpenAL32.dll"; DestDir: "{app}"; Flags: ignoreversion
 
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
