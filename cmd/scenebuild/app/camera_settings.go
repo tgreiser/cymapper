@@ -7,6 +7,7 @@ import (
 
 	"github.com/g3n/engine/gui"
 	"github.com/g3n/engine/math32"
+	"github.com/g3n/engine/texture"
 	"gocv.io/x/gocv"
 )
 
@@ -17,6 +18,7 @@ type CameraSettings struct {
 	mat      gocv.Mat
 	window   *gocv.Window
 	webcam   *gocv.VideoCapture
+	texture  *texture.Texture2D
 }
 
 func (s *CameraSettings) Initialize(a *App) {
@@ -60,6 +62,13 @@ func (s *CameraSettings) Initialize(a *App) {
 
 	a.GuiPanel().Add(cpanel)
 
+	imageRGBA := s.getRGBAImageFromWebcam()
+	image := gui.NewImageFromRGBA(imageRGBA)
+	image.SetPosition(75, 128)
+	s.texture = texture.NewTexture2DFromRGBA(imageRGBA)
+	image.SetTexture(s.texture)
+	a.GuiPanel().Add(image) //FIXME Possible source of memory leak
+
 	// gocv logic
 	// channel to receive os signal
 	//s.c = make(chan os.Signal, 1)
@@ -67,9 +76,17 @@ func (s *CameraSettings) Initialize(a *App) {
 }
 
 func (s *CameraSettings) Render(a *App) {
+	imageRGBA := s.getRGBAImageFromWebcam()
+	//tex := texture.NewTexture2DFromRGBA(imageRGBA)
+	s.texture.SetFromRGBA(imageRGBA)
+	a.Dispatch(gui.OnCursor, nil)
+}
+
+
+func (s *CameraSettings) getRGBAImageFromWebcam() (*image.RGBA) {
 	if ok := s.webcam.Read(&s.mat); !ok {
 		fmt.Printf("cannot read device %d\n", s.deviceId)
-		return
+		return nil
 	}
 
 	// mat.ToImg, then type assert as image.RGBA
@@ -77,13 +94,13 @@ func (s *CameraSettings) Render(a *App) {
 	img, err := s.mat.ToImage()
 	if err != nil {
 		fmt.Errorf("Unable to read frame: %v\n", err)
-		return
+		return nil
 	}
 
 	if img, ok := img.(*image.RGBA); ok {
-		img := gui.NewImageFromRGBA(img)
-		img.SetPosition(75, 128)
-		a.GuiPanel().Add(img) //FIXME Possible source of memory leak
+		return img
+	} else {
+		fmt.Errorf("Unable to convert from gocv.mat to image.RGBA: %v\n")
+		return nil
 	}
-	//col :=
 }
