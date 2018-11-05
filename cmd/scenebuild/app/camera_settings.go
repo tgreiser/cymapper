@@ -5,8 +5,10 @@ import (
 	"image"
 	"os"
 
+	"github.com/g3n/engine/graphic"
 	"github.com/g3n/engine/gui"
 	"github.com/g3n/engine/math32"
+	"github.com/g3n/engine/material"
 	"github.com/g3n/engine/texture"
 	"gocv.io/x/gocv"
 )
@@ -19,9 +21,14 @@ type CameraSettings struct {
 	window   *gocv.Window
 	webcam   *gocv.VideoCapture
 	texture  *texture.Texture2D
+	app      *App
 }
 
 func (s *CameraSettings) Initialize(a *App) {
+	s.app = a
+	a.Scene().Add(a.ambLight)
+	a.CameraOrtho().SetZoom(2.0)
+	a.Scene().Add(a.CameraOrtho().GetCamera())
 	s.deviceId = 0
 
 	// open webcam
@@ -62,12 +69,13 @@ func (s *CameraSettings) Initialize(a *App) {
 
 	a.GuiPanel().Add(cpanel)
 
-	imageRGBA := s.getRGBAImageFromWebcam()
-	image := gui.NewImageFromRGBA(imageRGBA)
-	image.SetPosition(75, 128)
-	s.texture = texture.NewTexture2DFromRGBA(imageRGBA)
-	image.SetTexture(s.texture)
-	a.GuiPanel().Add(image) //FIXME Possible source of memory leak
+	s.makeWebcamView(a)
+	//imageRGBA := s.getRGBAImageFromWebcam()
+	//image := gui.NewImageFromRGBA(imageRGBA)
+	//image.SetPosition(75, 128)
+	//s.texture = texture.NewTexture2DFromRGBA(imageRGBA)
+	//image.SetTexture(s.texture)
+	//a.GuiPanel().Add(image) //FIXME Possible source of memory leak
 
 	// gocv logic
 	// channel to receive os signal
@@ -77,11 +85,26 @@ func (s *CameraSettings) Initialize(a *App) {
 
 func (s *CameraSettings) Render(a *App) {
 	imageRGBA := s.getRGBAImageFromWebcam()
-	//tex := texture.NewTexture2DFromRGBA(imageRGBA)
 	s.texture.SetFromRGBA(imageRGBA)
-	a.Dispatch(gui.OnCursor, nil)
 }
 
+
+func (s *CameraSettings) makeWebcamView(a *App) {
+	imageRGBA := s.getRGBAImageFromWebcam()
+	bounds := imageRGBA.Bounds()
+	width := float32(bounds.Dx())
+	height := float32(bounds.Dy())
+	aspectRatio := width / height
+
+	s.texture = texture.NewTexture2DFromRGBA(imageRGBA)
+
+	mat := material.NewStandard(&math32.Color{1, 1, 1})
+	mat.AddTexture(s.texture)
+
+	sprite := graphic.NewSprite(aspectRatio, 1, mat)
+
+	a.Scene().Add(sprite)
+}
 
 func (s *CameraSettings) getRGBAImageFromWebcam() (*image.RGBA) {
 	if ok := s.webcam.Read(&s.mat); !ok {
