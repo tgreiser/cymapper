@@ -27,7 +27,7 @@ type CameraSettings struct {
 func (s *CameraSettings) Initialize(a *App) {
 	s.app = a
 	a.Scene().Add(a.ambLight)
-	a.CameraOrtho().SetZoom(2.0)
+	a.CameraOrtho().SetZoom(2.75)
 	a.Scene().Add(a.CameraOrtho().GetCamera())
 	s.deviceId = 0
 
@@ -56,7 +56,7 @@ func (s *CameraSettings) Initialize(a *App) {
 	cpanel.SetLayoutParams(&gui.DockLayoutParams{Edge: gui.DockTop})
 
 	// Add GUI stuff
-	l := gui.NewLabel("Camera Device ID (0 - ?)")
+	l := gui.NewLabel("Camera Device ID (0 - ?)") // Doesn't change camera yet
 	l.SetPosition(0, 0)
 	l.SetColor(darkTextColor)
 	a.Log().Info("Add label")

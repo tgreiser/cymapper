@@ -179,7 +179,7 @@ func (app *App) setupScene() {
 	app.Renderer().SetObjectSorting(true)
 
 	// Adds ambient light to the test scene
-	app.ambLight = light.NewAmbient(&math32.Color{1.0, 1.0, 1.0}, 0.5)
+	app.ambLight = light.NewAmbient(&math32.Color{1.0, 1.0, 1.0}, 1.0)
 
 	// Sets perspective camera position
 	//width, height := app.Window().Size()
