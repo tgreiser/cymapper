@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"image"
 	"os"
+	"strconv"
 
 	"github.com/g3n/engine/graphic"
 	"github.com/g3n/engine/gui"
@@ -64,6 +65,24 @@ func (s *CameraSettings) Initialize(a *App) {
 
 	s.devId = gui.NewEdit(50, "0")
 	s.devId.SetPosition(200, 0)
+	s.devId.Subscribe(gui.OnChange, func(name string, ev interface{}) {
+		var err error
+
+		oldId, err := strconv.Atoi(s.devId.Text())
+		fmt.Println("old id: %v",oldId)
+		s.deviceId, err = strconv.Atoi(s.devId.Text())
+		if err != nil {
+			fmt.Printf("invalid webcam device Id from gui")
+			return
+		}
+		s.webcam, err = gocv.VideoCaptureDevice(s.deviceId)
+		if err != nil {
+			fmt.Printf("error opening video capture device: %v\n", s.deviceId)
+			s.deviceId = oldId
+			s.devId.SetText(string(oldId)) 
+			s.webcam, err = gocv.VideoCaptureDevice(s.deviceId)
+		}
+	})
 	a.Log().Info("Add dev id")
 	cpanel.Add(s.devId)
 
