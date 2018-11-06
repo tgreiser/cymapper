@@ -28,7 +28,8 @@ type CameraSettings struct {
 func (s *CameraSettings) Initialize(a *App) {
 	s.app = a
 	a.Scene().Add(a.ambLight)
-	a.CameraOrtho().SetZoom(2.75)
+	a.CameraOrtho().SetZoom(3)
+	a.CameraOrtho().SetPositionY(0.14)
 	a.Scene().Add(a.CameraOrtho().GetCamera())
 	s.deviceId = 0
 
