@@ -6,6 +6,8 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/g3n/engine/geometry"
+	"github.com/g3n/engine/gls"
 	"github.com/g3n/engine/graphic"
 	"github.com/g3n/engine/gui"
 	"github.com/g3n/engine/math32"
@@ -15,14 +17,15 @@ import (
 )
 
 type CameraSettings struct {
-	devId    *gui.Edit
-	deviceId int
-	c        chan os.Signal
-	mat      gocv.Mat
-	window   *gocv.Window
-	webcam   *gocv.VideoCapture
-	texture  *texture.Texture2D
-	app      *App
+	devId             *gui.Edit
+	deviceId          int
+	c                 chan os.Signal
+	mat               gocv.Mat
+	window            *gocv.Window
+	webcam            *gocv.VideoCapture
+	webcamAspectRatio float32
+	texture           *texture.Texture2D
+	app               *App
 }
 
 func (s *CameraSettings) Initialize(a *App) {
@@ -70,19 +73,22 @@ func (s *CameraSettings) Initialize(a *App) {
 		var err error
 
 		oldId, err := strconv.Atoi(s.devId.Text())
-		fmt.Println("old id: %v",oldId)
+		fmt.Printf("old id: %v", oldId)
 		s.deviceId, err = strconv.Atoi(s.devId.Text())
 		if err != nil {
 			fmt.Printf("invalid webcam device Id from gui")
 			return
 		}
 		s.webcam, err = gocv.VideoCaptureDevice(s.deviceId)
-		if err != nil {
-			fmt.Printf("error opening video capture device: %v\n", s.deviceId)
-			s.deviceId = oldId
-			s.devId.SetText(string(oldId)) 
-			s.webcam, err = gocv.VideoCaptureDevice(s.deviceId)
-		}
+		// Error handling not working correctly, error is still nil
+		// when an invalid deviceId is chosen, see:
+		// https://github.com/hybridgroup/gocv/issues/274
+		//if err != nil {
+		//	fmt.Printf("error opening video capture device: %v\n", s.deviceId)
+		//	s.deviceId = oldId
+		//	s.devId.SetText(string(oldId)) 
+		//	s.webcam, err = gocv.VideoCaptureDevice(s.deviceId)
+		//}
 	})
 	a.Log().Info("Add dev id")
 	cpanel.Add(s.devId)
@@ -90,6 +96,8 @@ func (s *CameraSettings) Initialize(a *App) {
 	a.GuiPanel().Add(cpanel)
 
 	s.makeWebcamView(a)
+
+	s.addGuidelines(a)
 	//imageRGBA := s.getRGBAImageFromWebcam()
 	//image := gui.NewImageFromRGBA(imageRGBA)
 	//image.SetPosition(75, 128)
@@ -114,16 +122,65 @@ func (s *CameraSettings) makeWebcamView(a *App) {
 	bounds := imageRGBA.Bounds()
 	width := float32(bounds.Dx())
 	height := float32(bounds.Dy())
-	aspectRatio := width / height
+	s.webcamAspectRatio = width / height
 
 	s.texture = texture.NewTexture2DFromRGBA(imageRGBA)
 
 	mat := material.NewStandard(&math32.Color{1, 1, 1})
 	mat.AddTexture(s.texture)
 
-	sprite := graphic.NewSprite(aspectRatio, 1, mat)
+	sprite := graphic.NewSprite(s.webcamAspectRatio, 1, mat)
 
 	a.Scene().Add(sprite)
+}
+
+func (s *CameraSettings) addGuidelines(a *App) {
+	ratio := s.webcamAspectRatio
+	geom := geometry.NewGeometry()
+	vertices := math32.NewArrayF32(0, 32)
+	vertices.Append(
+		//crosshairs
+		-0.02, 0.0, 0.0,
+		0.02, 0.0, 0.0,
+		0.0, -0.02, 0.0,
+		0.0, 0.02, 0.0,
+
+		//horizontal lines of box
+		0.25*ratio, 0.25, 0.0,
+		-0.25*ratio, 0.25, 0.0,
+		0.25*ratio, -0.25, 0.0,
+		-0.25*ratio, -0.25, 0.0,
+
+		//vertical lines of box
+		0.25*ratio, 0.25, 0.0,
+		0.25*ratio, -0.25, 0.0,
+		-0.25*ratio, 0.25, 0.0,
+		-0.25*ratio, -0.25, 0.0,
+	)
+	colors := math32.NewArrayF32(0, 32)
+	colors.Append(
+		1.0, 1.0, 1.0,
+		1.0, 1.0, 1.0,
+		1.0, 1.0, 1.0,
+		1.0, 1.0, 1.0,
+		1.0, 1.0, 1.0,
+		1.0, 1.0, 1.0,
+		1.0, 1.0, 1.0,
+		1.0, 1.0, 1.0,
+		1.0, 1.0, 1.0,
+		1.0, 1.0, 1.0,
+		1.0, 1.0, 1.0,
+		1.0, 1.0, 1.0,
+	)
+	geom.AddVBO(gls.NewVBO(vertices).AddAttrib(gls.VertexPosition))
+	geom.AddVBO(gls.NewVBO(colors).AddAttrib(gls.VertexColor))
+
+	// Creates basic material
+	mat := material.NewBasic()
+
+	// Creates lines with the specified geometry and material
+	lines1 := graphic.NewLines(geom, mat)
+	a.Scene().Add(lines1)
 }
 
 func (s *CameraSettings) getRGBAImageFromWebcam() (*image.RGBA) {
