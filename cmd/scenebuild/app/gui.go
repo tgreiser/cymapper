@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"reflect"
 
 	"github.com/g3n/engine/gui"
 	"github.com/g3n/engine/math32"
@@ -72,7 +73,7 @@ func (app *App) buildGui() {
 		header.Add(app.labelFPS)
 	}
 
-	bTestCam := gui.NewButton("Setup Camera")
+	bTestCam := gui.NewButton("Set Up Camera")
 	bTestCam.SetWidth(90)
 	bTestCam.SetHeight(30)
 	bTestCam.Subscribe(gui.OnClick, func(name string, ev interface{}) {
@@ -81,20 +82,43 @@ func (app *App) buildGui() {
 
 		var newScene IScreen
 
-		if app.location == "main" {
-			app.location = "webcam"
+		switch app.screen.(type) {
+		case *SceneUI:
 			newScene = &CameraSettings{}
-		} else if app.location == "webcam" {
-			app.location = "main"
+		case *CameraSettings:
 			newScene = &SceneUI{}
-		} else {
-			panic("app.location is invalid")
+		default:
+			panic("Invalid Scene")
 		}
 		newScene.Initialize(app)
 		app.Log().Info("Toggling scene")
 		app.screen = newScene
 	})
 	header.Add(bTestCam)
+
+	bScanFixture := gui.NewButton("Scan Fixture")
+	bScanFixture.SetWidth(90)
+	bScanFixture.SetHeight(30)
+	bScanFixture.Subscribe(gui.OnClick, func(name string, ev interface{}) {
+		app.Log().Info("Go to Scan Fixture scene")
+		app.setupScene()
+
+		var newScene IScreen
+		app.Log().Info(reflect.TypeOf(app.screen).String())
+
+		switch app.screen.(type) {
+		case *SceneUI:
+			newScene = &CameraSettings{}
+		case *CameraSettings:
+			newScene = &SceneUI{}
+		default:
+			panic("Invalid Scene")
+		}
+		newScene.Initialize(app)
+		app.Log().Info("Toggling scene")
+		app.screen = newScene
+	})
+	header.Add(bScanFixture)
 
 	app.ed = NewErrorDialog(600, 100)
 	header.Add(app.ed)

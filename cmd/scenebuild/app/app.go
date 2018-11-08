@@ -113,7 +113,6 @@ func Create() *App {
 	sui := &SceneUI{}
 	sui.Initialize(app)
 	app.screen = sui
-	app.location = "main"
 
 	// Subscribe to before render events to call current screen Render method
 	app.Subscribe(application.OnBeforeRender, func(evname string, ev interface{}) {

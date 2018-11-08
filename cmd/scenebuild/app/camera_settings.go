@@ -98,12 +98,6 @@ func (s *CameraSettings) Initialize(a *App) {
 	s.makeWebcamView(a)
 
 	s.addGuidelines(a)
-	//imageRGBA := s.getRGBAImageFromWebcam()
-	//image := gui.NewImageFromRGBA(imageRGBA)
-	//image.SetPosition(75, 128)
-	//s.texture = texture.NewTexture2DFromRGBA(imageRGBA)
-	//image.SetTexture(s.texture)
-	//a.GuiPanel().Add(image) //FIXME Possible source of memory leak
 
 	// gocv logic
 	// channel to receive os signal
