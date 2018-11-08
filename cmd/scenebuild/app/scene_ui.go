@@ -3,6 +3,7 @@ package app
 import (
 	"path/filepath"
 	"strconv"
+	"os/user"
 
 	"github.com/g3n/engine/geometry"
 	"github.com/g3n/engine/gls"
@@ -36,6 +37,13 @@ type SceneUI struct {
 func (s *SceneUI) Initialize(app *App) {
 	s.log = app.Log()
 	s.app = app
+
+	user, err := user.Current()
+	if err != nil {
+		s.Log().Error("Unable to get current user")
+	}
+	userPath := user.HomeDir
+	startingPath := filepath.Join(userPath, "Documents", "Cymapper", "Fixtures")
 
 	s.sceneWidth = 1280
 	s.sceneHeight = 720
@@ -218,7 +226,7 @@ func (s *SceneUI) Initialize(app *App) {
 	cpanel.Add(bFlipY)
 
 	// Save Scene - File Select
-	ss, err := NewFileSelect(400, 300, "../../fixtures")
+	ss, err := NewFileSelect(400, 300, startingPath)
 	if err != nil {
 		panic(err)
 	}
@@ -245,7 +253,7 @@ func (s *SceneUI) Initialize(app *App) {
 	cpanel.Add(s.sceneFS)
 
 	// Add Fixture - File Select
-	fs, err := NewFileSelect(400, 300, "../../fixtures")
+	fs, err := NewFileSelect(400, 300, startingPath)
 	if err != nil {
 		panic(err)
 	}
