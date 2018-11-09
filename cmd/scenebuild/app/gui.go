@@ -2,7 +2,6 @@ package app
 
 import (
 	"fmt"
-	"reflect"
 
 	"github.com/g3n/engine/gui"
 	"github.com/g3n/engine/math32"
@@ -80,19 +79,14 @@ func (app *App) buildGui() {
 		app.Log().Info("setupScene")
 		app.setupScene()
 
-		var newScene IScreen
-
 		switch app.screen.(type) {
 		case *SceneUI:
-			newScene = &CameraSettings{}
-		case *CameraSettings:
-			newScene = &SceneUI{}
+			app.screen = &CameraSettings{}
 		default:
-			panic("Invalid Scene")
+			app.screen = &SceneUI{}
 		}
-		newScene.Initialize(app)
+		app.screen.Initialize(app)
 		app.Log().Info("Toggling scene")
-		app.screen = newScene
 	})
 	header.Add(bTestCam)
 
@@ -103,20 +97,14 @@ func (app *App) buildGui() {
 		app.Log().Info("Go to Scan Fixture scene")
 		app.setupScene()
 
-		var newScene IScreen
-		app.Log().Info(reflect.TypeOf(app.screen).String())
-
 		switch app.screen.(type) {
 		case *SceneUI:
-			newScene = &CameraSettings{}
-		case *CameraSettings:
-			newScene = &SceneUI{}
+			app.screen = &ScanFixture{}
 		default:
-			panic("Invalid Scene")
+			app.screen = &SceneUI{}
 		}
-		newScene.Initialize(app)
+		app.screen.Initialize(app)
 		app.Log().Info("Toggling scene")
-		app.screen = newScene
 	})
 	header.Add(bScanFixture)
 
