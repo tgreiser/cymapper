@@ -14,6 +14,7 @@ import (
 	"github.com/g3n/engine/util/logger"
 	color "github.com/gerow/go-color"
 	"github.com/tgreiser/cymapper/cmd/scenebuild/fixture"
+	"github.com/tgreiser/cymapper/cmd/scenebuild/ui"
 )
 
 type SceneUI struct {
@@ -50,11 +51,7 @@ func (s *SceneUI) Initialize(app *App) {
 	s.selected = -1
 
 	// Adds control panel after the header
-	cpanel := gui.NewPanel(800, 120)
-	cpanel.SetBorders(0, 0, 1, 0)
-	cpanel.SetPaddings(4, 4, 4, 4)
-	cpanel.SetColor(math32.NewColorHex(0xffca6e))
-	cpanel.SetLayoutParams(&gui.DockLayoutParams{Edge: gui.DockTop})
+	cpanel := ui.NewControlPanel()
 
 	l2 := gui.NewLabel("Build a scene by adding, moving and resizing fixture maps.")
 	l2.SetPosition(0, 0)

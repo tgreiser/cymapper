@@ -14,6 +14,7 @@ import (
 	"github.com/g3n/engine/material"
 	"github.com/g3n/engine/texture"
 	"gocv.io/x/gocv"
+	"github.com/tgreiser/cymapper/cmd/scenebuild/ui"
 )
 
 type CameraSettings struct {
@@ -53,15 +54,10 @@ func (s *CameraSettings) Initialize(a *App) {
 		s.mat.Close()
 	})
 
-	// Adds control panel after the header
-	cpanel := gui.NewPanel(800, 120)
-	cpanel.SetBorders(0, 0, 1, 0)
-	cpanel.SetPaddings(4, 4, 4, 4)
-	cpanel.SetColor(math32.NewColorHex(0xffca6e))
-	cpanel.SetLayoutParams(&gui.DockLayoutParams{Edge: gui.DockTop})
+	cpanel := ui.NewControlPanel()
 
 	// Add GUI stuff
-	l := gui.NewLabel("Camera Device ID (0 - ?)") // Doesn't change camera yet
+	l := gui.NewLabel("Camera Device ID (0 - ?)")
 	l.SetPosition(0, 0)
 	l.SetColor(darkTextColor)
 	a.Log().Info("Add label")
